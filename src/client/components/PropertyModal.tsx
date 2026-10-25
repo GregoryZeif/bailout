@@ -53,7 +53,7 @@ export function PropertyModal({ view, space, onClose }: { view: GameView; space:
 
   return (
     <Modal title={t(`spaces.${def.key}`)} onClose={onClose} className="prop-modal">
-      {def.group && <div className="deed-band" style={{ background: GROUP_COLORS[def.group] }} />}
+      {def.group && <div className="deed-band" style={{ background: GROUP_COLORS[def.group] }}>{t(`group.${def.group}`)}</div>}
       {!def.group && <div className="deed-icon"><SpaceIcon kind={def.kind} size={44} /></div>}
       <p className="muted">{t(`kind.${def.kind}`, {
         salary: num(view.config.salary), loan: num(RULES.studentLoanPayment),
@@ -138,7 +138,7 @@ export function PortfolioModal({ view, onClose, onSelect }: { view: GameView; on
               return (
                 <li key={i}>
                   <button className="pf-name" onClick={() => onSelect(i)}>
-                    <span className="sw" style={{ background: d.group ? GROUP_COLORS[d.group] : '#5c6b7a' }} />
+                    <span className="sw" style={{ background: d.group ? GROUP_COLORS[d.group] : '#5c6b7a' }} title={d.group ? t(`group.${d.group}`) : undefined} />
                     {t(`spaces.${d.key}`)}
                     {o.upgrades > 0 && <em> · {o.upgrades === 5 ? t('prop.compound') : t('prop.level', { n: o.upgrades })}</em>}
                     {o.mortgaged && <em className="neg"> · {t('prop.mortgaged')}</em>}
