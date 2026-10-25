@@ -95,7 +95,8 @@ describe('multiplayer server', () => {
     const r1 = await me.act({ type: 'roll' }, id);
     const r2 = await me.act({ type: 'roll' }, id); // network retry
     expect(r1.ok && r2.ok).toBe(true);
-    const after = await me.waitFor((x) => x.rolled);
+    // not `x.rolled`: doubles onto an unbuyable space grant an extra roll and reset it in the same action
+    const after = await me.waitFor((x) => x.log.some((l) => l.key === 'log.rolled'));
     const rolls = after.log.filter((l) => l.key === 'log.rolled');
     expect(rolls).toHaveLength(1);
     expect(after.players.find((p) => p.id === me.playerId)!.cash).toBeGreaterThanOrEqual(0);
