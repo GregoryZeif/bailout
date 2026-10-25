@@ -159,6 +159,7 @@ export function PlayersPanel({ view, onTrade, onSelectSpace }: { view: GameView;
             <header>
               <span className="tok" style={{ background: p.color }}><TokenIcon token={p.token} size={20} color="#f4ecd8" /></span>
               <span className="nm">{p.name}{p.id === view.you && <em> ({t('common.you')})</em>}</span>
+              {p.bot && <span className="badge">{t('lobby.bot')}</span>}
               {!p.connected && <span className="badge warn">{t('hud.disconnected')}</span>}
               {p.inJail && <span className="badge">{t('hud.inJail')}</span>}
               {ally && <span className="badge ok">{t('hud.ally')}</span>}
