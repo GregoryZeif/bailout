@@ -203,6 +203,13 @@ class Store {
     this.enterRoom(res.code!);
   }
 
+  /** Quick start: a private room with two bots, ready to go. */
+  async playWithBots() {
+    await this.createRoom('private');
+    if (!this.state.code) return;
+    for (let i = 0; i < 2; i++) await this.act({ type: 'addBot' });
+  }
+
   /** Open public lobbies; empty when offline (the menu simply shows none). */
   async listRooms(): Promise<PublicRoom[]> {
     const res = await this.emit('rooms:list', {});

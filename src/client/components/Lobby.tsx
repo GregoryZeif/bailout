@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { CONFIG_BOUNDS, TOKENS } from '../../shared/board';
 import type { GameConfig } from '../../shared/types';
 import type { GameView } from '../../shared/view';
@@ -175,7 +175,7 @@ function PresetGroup({ group, value, editable }: { group: (typeof SIMPLE)[number
   return (
     <div className="preset-group" role="group" aria-label={t(group.label)}>
       <span className="preset-label">{t(group.label)}</span>
-      <div className="preset-chips">
+      <div className="preset-chips" style={{ '--cols': group.presets.length + (custom ? 1 : 0) > 3 ? 2 : 3 } as CSSProperties}>
         {group.presets.map((p) => (
           <button key={p.value} className={`preset-chip${p.value === value ? ' on' : ''}`} aria-pressed={p.value === value}
             disabled={!editable && p.value !== value}
