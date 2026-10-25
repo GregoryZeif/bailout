@@ -44,7 +44,8 @@ export function Menu() {
   }, [connected]);
 
   const ensureName = async () => {
-    const n = draft.trim() || t('menu.namePlaceholder').replace(/^.*?, /, '');
+    // Empty name: use the placeholder's example name without its "e.g." / "например," lead-in.
+    const n = draft.trim() || t('menu.namePlaceholder').replace(/^(e\.g\.\s*|.*?,\s*)/, '');
     if (n !== name) await store.setName(n);
   };
   const run = async (fn: () => Promise<unknown>) => {
