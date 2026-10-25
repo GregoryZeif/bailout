@@ -18,7 +18,7 @@ npm install
 npm run dev          # server on :3001 + Vite client on :5173 (proxied)
 ```
 
-Open http://localhost:5173 in two different browsers, or in a normal and a private window. Create a room in one, then join it from the other with the 5-letter code or the invite link.
+Open http://localhost:5173 in two different browsers, or in a normal and a private window. Create a room in one, then join it from the other with the 5-letter code or the invite link. Playing alone? Click **+ Add bot** in the lobby.
 
 ### Production
 
@@ -80,6 +80,7 @@ src/
   server/
     app.ts           Express + Socket.IO: sessions, rooms, idempotent actions, timers, persistence
     db.ts            SQLite (better-sqlite3): sessions (hashed tokens) and room snapshots
+    bot.ts           computer-player policy (server-only: it reads quiz answers)
     index.ts         entry point, graceful shutdown
   client/            React + Vite
     store.ts         socket connection, reconnection, action sending with retry-safe ids
@@ -111,6 +112,12 @@ e2e/                 Playwright playthrough
 **Testability.** The engine takes `now` and `rng` as parameters, so tests are fully deterministic. That covers seeded simulations as well as tests that script exact dice rolls.
 
 ---
+
+## Rooms, bots and settings
+
+- **Private rooms** are joined by code or invite link. **Public rooms** are also listed under *Open public rooms* on the main menu while they wait in the lobby with a free seat and their host online. The host can switch between the two in the lobby.
+- **Bots:** the host adds or removes bots in the lobby; they are always ready and count toward the 2–6 players. The server plays them one paced move at a time (`botDelayMs`, default 1.1 s): they buy when they can keep a cash reserve, bid up to about 90% of a property's worth, upgrade complete sets, use jail cards or the citizenship test, liquidate sensibly in debt, and accept only trades clearly in their favor. Bots never become host, and a lobby with only bots left is deleted.
+- **Settings:** the lobby shows three one-tap choices: game length, turn timer and starting money. **Advanced settings** reveals every configurable value.
 
 ## Game rules (as implemented)
 

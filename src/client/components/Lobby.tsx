@@ -3,14 +3,48 @@ import { CONFIG_BOUNDS, TOKENS } from '../../shared/board';
 import type { GameConfig } from '../../shared/types';
 import type { GameView } from '../../shared/view';
 import { store } from '../store';
-import { useT } from '../i18n';
+import { useT, type T } from '../i18n';
 import { LangMute } from './common';
 import { ChatBox } from './SidePanel';
 import { TokenIcon } from './icons';
 
-const EDITABLE: (keyof GameConfig)[] = [
-  'timeLimitMinutes', 'turnSeconds', 'auctionSeconds', 'tradeSeconds', 'inflationChance',
-  'reconnectGraceSeconds', 'abandonSeconds', 'startingCash', 'salary', 'maxPlayers',
+interface Preset {
+  value: number;
+  name: string;
+  /** Detail line under the name, e.g. "20 min". */
+  detail: (t: T) => string;
+}
+
+/** The few settings most hosts care about, as one-tap choices. */
+const SIMPLE: { key: keyof GameConfig; label: string; presets: Preset[] }[] = [
+  {
+    key: 'timeLimitMinutes', label: 'lobby.gameLength', presets: [
+      { value: 20, name: 'preset.quick', detail: ({ t }) => t('preset.minutes', { n: 20 }) },
+      { value: 45, name: 'preset.standard', detail: ({ t }) => t('preset.minutes', { n: 45 }) },
+      { value: 90, name: 'preset.long', detail: ({ t }) => t('preset.minutes', { n: 90 }) },
+      { value: 0, name: 'preset.endless', detail: ({ t }) => t('preset.lastStanding') },
+    ],
+  },
+  {
+    key: 'turnSeconds', label: 'lobby.turnSpeed', presets: [
+      { value: 45, name: 'preset.fast', detail: ({ t }) => t('preset.seconds', { n: 45 }) },
+      { value: 90, name: 'preset.normal', detail: ({ t }) => t('preset.seconds', { n: 90 }) },
+      { value: 180, name: 'preset.relaxed', detail: ({ t }) => t('preset.minutes', { n: 3 }) },
+    ],
+  },
+  {
+    key: 'startingCash', label: 'lobby.startingCash', presets: [
+      { value: 1000, name: 'preset.tight', detail: ({ money }) => money(1000) },
+      { value: 1500, name: 'preset.normal', detail: ({ money }) => money(1500) },
+      { value: 3000, name: 'preset.generous', detail: ({ money }) => money(3000) },
+    ],
+  },
+];
+
+/** Everything else, behind "Advanced settings". */
+const ADVANCED: (keyof GameConfig)[] = [
+  'timeLimitMinutes', 'turnSeconds', 'startingCash', 'maxPlayers', 'auctionSeconds', 'tradeSeconds',
+  'inflationChance', 'salary', 'reconnectGraceSeconds', 'abandonSeconds',
 ];
 
 export function Lobby({ view }: { view: GameView }) {
@@ -19,6 +53,7 @@ export function Lobby({ view }: { view: GameView }) {
   const isHost = view.hostId === view.you;
   const isPublic = view.visibility === 'public';
   const [copied, setCopied] = useState(false);
+  const [advanced, setAdvanced] = useState(false);
   const canStart = view.players.length >= 2 && view.players.every((p) => p.id === view.hostId || p.ready);
 
   const copy = async () => {
@@ -107,17 +142,54 @@ export function Lobby({ view }: { view: GameView }) {
 
         <section className="panel">
           <h3>{t('lobby.settings')}</h3>
-          <div className="settings">
-            {EDITABLE.map((k) => (
-              <ConfigRow key={k} k={k} value={view.config[k]} editable={isHost} />
+          <div className="simple-settings">
+            {SIMPLE.map((g) => (
+              <PresetGroup key={g.key} group={g} value={view.config[g.key]} editable={isHost} />
             ))}
           </div>
+          <button className="link advanced-toggle" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)} data-testid="advanced">
+            {t(advanced ? 'lobby.hideAdvanced' : 'lobby.advanced')} {advanced ? '▴' : '▾'}
+          </button>
+          {advanced && (
+            <div className="settings">
+              {ADVANCED.map((k) => (
+                <ConfigRow key={k} k={k} value={view.config[k]} editable={isHost} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="panel chat-panel">
           <h3>{t('tab.chat')}</h3>
           <ChatBox view={view} />
         </section>
+      </div>
+    </div>
+  );
+}
+
+function PresetGroup({ group, value, editable }: { group: (typeof SIMPLE)[number]; value: number; editable: boolean }) {
+  const tt = useT();
+  const { t } = tt;
+  const custom = !group.presets.some((p) => p.value === value);
+  return (
+    <div className="preset-group" role="group" aria-label={t(group.label)}>
+      <span className="preset-label">{t(group.label)}</span>
+      <div className="preset-chips">
+        {group.presets.map((p) => (
+          <button key={p.value} className={`preset-chip${p.value === value ? ' on' : ''}`} aria-pressed={p.value === value}
+            disabled={!editable && p.value !== value}
+            onClick={() => editable && p.value !== value && store.act({ type: 'configure', config: { [group.key]: p.value } })}>
+            <strong>{t(p.name)}</strong>
+            <small>{p.detail(tt)}</small>
+          </button>
+        ))}
+        {custom && (
+          <span className="preset-chip on custom">
+            <strong>{t('preset.custom')}</strong>
+            <small>{group.key === 'startingCash' ? tt.money(value) : tt.num(value)}</small>
+          </span>
+        )}
       </div>
     </div>
   );

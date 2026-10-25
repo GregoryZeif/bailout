@@ -139,6 +139,16 @@ input, select {
 .lobby-actions { display: flex; flex-direction: column; gap: 0.5rem; }
 .hint { font-size: 0.8rem; color: var(--muted); margin: 0.2rem 0; }
 .settings { display: flex; flex-direction: column; gap: 0.35rem; }
+.simple-settings { display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 0.75rem; }
+.preset-label { display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 0.35rem; }
+.preset-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.preset-chip { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 5.5rem; min-width: 0; padding: 0.45rem 0.6rem; border-radius: 10px; border: 2px solid var(--line); background: var(--cream); color: var(--ink); text-align: left; line-height: 1.2; }
+.preset-chip strong { font-size: 0.9rem; }
+.preset-chip small { font-size: 0.75rem; color: var(--muted); }
+.preset-chip.on { border-color: var(--navy); background: var(--navy); color: var(--cream); }
+.preset-chip.on small { color: var(--gold); }
+.preset-chip:disabled { opacity: 0.45; }
+.advanced-toggle { align-self: flex-start; margin: 0 0 0.5rem; }
 .cfg-row { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; font-size: 0.85rem; padding: 0.25rem 0; border-bottom: 1px dashed var(--line); }
 .cfg-input { display: flex; align-items: center; gap: 0.2rem; }
 .cfg-input input { width: 6em; padding: 0.3em 0.5em; }
