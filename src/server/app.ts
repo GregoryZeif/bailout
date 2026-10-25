@@ -1,5 +1,5 @@
 import express from 'express';
-import { randomInt } from 'node:crypto';
+import { randomInt, timingSafeEqual } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { createServer, type Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
@@ -27,14 +27,24 @@ export interface ServerOptions {
   now?: () => number;
   /** Pause before each bot move, so humans can follow. */
   botDelayMs?: number;
-  /** Allow tester rooms (cheat tools) and the tester library. Off in production unless asked for. */
+  /** Allow tester rooms (cheat tools) and the tester library for everyone. Off in production unless asked for. */
   tester?: boolean;
+  /** Secret that unlocks tester mode for one browser (sent in the socket handshake). */
+  testerKey?: string;
 }
 
 type IO = Server<ClientToServer, ServerToClient>;
 type Sock = Socket<ClientToServer, ServerToClient> & { data: { session: Session } };
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
+
+/** Constant-time comparison, so the tester key can't be guessed by timing. */
+function sameSecret(given: unknown, secret: string | undefined): boolean {
+  if (!secret || typeof given !== 'string') return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(secret);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 /** Crypto-backed float in [0,1). */
 const cryptoRng = () => randomInt(0, 2 ** 47) / 2 ** 47;
@@ -200,7 +210,8 @@ export async function startServer(opts: ServerOptions) {
 
   io.on('connection', (raw) => {
     const socket = raw as Sock;
-    const auth = (socket.handshake.auth ?? {}) as { token?: string; name?: string };
+    const auth = (socket.handshake.auth ?? {}) as { token?: string; name?: string; testerKey?: string };
+    const tester = !!opts.tester || sameSecret(auth.testerKey, opts.testerKey);
     let token = typeof auth.token === 'string' ? auth.token : '';
     let session = token ? store.getSession(token) : null;
     if (!session) {
@@ -210,7 +221,7 @@ export async function startServer(opts: ServerOptions) {
     }
     socket.data.session = session;
     const joined = new Set<string>();
-    socket.emit('session', { token, playerId: session.playerId, name: session.name, rooms: roomsOf(session.playerId), tester: !!opts.tester });
+    socket.emit('session', { token, playerId: session.playerId, name: session.name, rooms: roomsOf(session.playerId), tester });
 
     const subscribe = (code: string) => {
       if (joined.has(code)) return;
@@ -233,7 +244,7 @@ export async function startServer(opts: ServerOptions) {
       try {
         const name = sanitizeName(p?.name ?? session!.name);
         const testMode = p?.tester === true;
-        if (testMode && !opts.tester) return ack({ ok: false, error: 'err.testerDisabled' });
+        if (testMode && !tester) return ack({ ok: false, error: 'err.testerDisabled' });
         const code = newCode();
         const s = createGame({ id: code, code, hostId: session!.playerId, hostName: name, now: now(), visibility: p?.visibility, testMode });
         // Tester rooms play fast: short timers, everything else at defaults.
@@ -251,7 +262,7 @@ export async function startServer(opts: ServerOptions) {
 
     socket.on('tester:library', (_p, ack) => {
       if (typeof ack !== 'function') return;
-      if (!opts.tester) return ack({ ok: false, error: 'err.testerDisabled' });
+      if (!tester) return ack({ ok: false, error: 'err.testerDisabled' });
       ack({ ok: true, library: testerLibrary() });
     });
 

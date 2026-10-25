@@ -31,7 +31,8 @@ npm start            # one Node process serves the API, WebSocket and static cli
 |---|---|---|
 | `PORT` | `3001` | HTTP/WebSocket port |
 | `DATA_DIR` | `./data` | SQLite database location (`bailout.db`) |
-| `BAILOUT_TESTER` | off in builds | `1` enables tester mode in production, `0` disables it in development |
+| `BAILOUT_TESTER` | off in builds | `1` enables tester mode for everyone in production, `0` disables it in development |
+| `BAILOUT_TESTER_KEY` | unset | secret (16+ characters) that unlocks tester mode for a browser opened with `?tester=KEY` |
 
 Health check: `GET /api/health`.
 
@@ -118,7 +119,7 @@ e2e/                 Playwright playthrough
 
 - **Private rooms** are joined by code or invite link. **Public rooms** are also listed under *Open public rooms* on the main menu while they wait in the lobby with a free seat and their host online. The host can switch between the two in the lobby.
 - **Bots:** the host adds or removes bots in the lobby; they are always ready and count toward the 2–6 players. The server plays them one paced move at a time (`botDelayMs`, default 1.1 s): they buy when they can keep a cash reserve, bid up to about 90% of a property's worth, upgrade complete sets, use jail cards or the citizenship test, liquidate sensibly in debt, and accept only trades clearly in their favor. Bots never become host, and a lobby with only bots left is deleted.
-- **Tester mode** (for checking the game fast): the main menu shows a 🧪 *Tester mode* box with **Start test game** (a private room with two fast bots, 30 s turns, no time limit) and **Open library** (every event card with real amounts, every citizenship-test question with its correct answer, every inflation event). In a test game the 🧪 *Tester* button lets the host queue dice rolls, move the current player to any space (counts as their roll), put any card on top of its deck, and add or remove cash. Every use is logged with 🧪. Tester mode is on automatically with `npm run dev`; a production build (`npm start`) turns it off unless you set `BAILOUT_TESTER=1`. Test rooms are always private.
+- **Tester mode** (for checking the game fast): the main menu shows a 🧪 *Tester mode* box with **Start test game** (a private room with two fast bots, 30 s turns, no time limit) and **Open library** (every event card with real amounts, every citizenship-test question with its correct answer, every inflation event). In a test game the 🧪 *Tester* button lets the host queue dice rolls, move the current player to any space (counts as their roll), put any card on top of its deck, and add or remove cash. Every use is logged with 🧪. Tester mode is on automatically with `npm run dev`. On a live site, set a secret `BAILOUT_TESTER_KEY` (at least 16 characters) and open `https://your-site/?tester=YOUR_KEY` once: that browser gets tester mode, nobody else does (`?tester=off` forgets the key). `BAILOUT_TESTER=1` would instead turn it on for everyone, which also reveals quiz answers to all players. Test rooms are always private.
 - **Settings:** the lobby shows three one-tap choices: game length, turn timer and starting money. **Advanced settings** reveals every configurable value.
 
 ## Game rules (as implemented)

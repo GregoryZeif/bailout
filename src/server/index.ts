@@ -17,6 +17,8 @@ startServer({
   staticDir: join(root, 'dist', 'client'),
   // Tester tools are on while developing (running the TypeScript source), off in a build unless BAILOUT_TESTER=1.
   tester: process.env.BAILOUT_TESTER === '1' || (process.env.BAILOUT_TESTER !== '0' && import.meta.url.endsWith('.ts')),
+  // On a live site, tester mode opens only for browsers that know this key (ignored if too short to be safe).
+  testerKey: (process.env.BAILOUT_TESTER_KEY?.length ?? 0) >= 16 ? process.env.BAILOUT_TESTER_KEY : undefined,
 }).then((server) => {
   const shutdown = async (sig: string) => {
     console.log(`[process] ${sig} received, saving rooms…`);

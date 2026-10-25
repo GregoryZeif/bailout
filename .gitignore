@@ -4,3 +4,6 @@ dist-server
 data
 *.db
 e2e/screenshots
+
+# production env for Hostinger import (contains secrets)
+hostinger.env
