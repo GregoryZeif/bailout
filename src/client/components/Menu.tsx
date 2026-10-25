@@ -109,7 +109,7 @@ export function Menu() {
 
           <div className="play-options">
             <button className="play-tile hot" disabled={off} onClick={() => run(() => store.playWithBots())} data-testid="play-bots">
-              <span className="tile-icon" aria-hidden><TokenIcon token="drone" size={30} color="#f4ecd8" /></span>
+              <span className="play-icon" aria-hidden><TokenIcon token="drone" size={30} color="#f4ecd8" /></span>
               <span className="tile-text"><strong>{t('menu.playBots')}</strong><small>{t('menu.playBotsHint')}</small></span>
             </button>
             <button className="play-tile primary" disabled={off} onClick={() => run(() => store.createRoom('private'))}>
