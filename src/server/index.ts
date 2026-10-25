@@ -13,6 +13,8 @@ const server = await startServer({
   port: Number(process.env.PORT ?? 3001),
   dataDir: process.env.DATA_DIR ?? join(root, 'data'),
   staticDir: join(root, 'dist', 'client'),
+  // Tester tools are on while developing (running the TypeScript source), off in a build unless BAILOUT_TESTER=1.
+  tester: process.env.BAILOUT_TESTER === '1' || (process.env.BAILOUT_TESTER !== '0' && import.meta.url.endsWith('.ts')),
 });
 
 const shutdown = async (sig: string) => {

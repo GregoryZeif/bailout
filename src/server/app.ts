@@ -5,6 +5,7 @@ import { createServer, type Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
 import { Server, type Socket } from 'socket.io';
 import { addPlayer, applyAction, createGame, humans, sanitizeName, setConnected, tick, type Ctx } from '../shared/engine.js';
+import { testerLibrary } from './tester.js';
 import { RULES } from '../shared/board.js';
 import { GameError, type Action, type GameEvent, type GameState } from '../shared/types.js';
 import { viewFor, type ClientToServer, type PublicRoom, type ServerToClient } from '../shared/view.js';
@@ -26,6 +27,8 @@ export interface ServerOptions {
   now?: () => number;
   /** Pause before each bot move, so humans can follow. */
   botDelayMs?: number;
+  /** Allow tester rooms (cheat tools) and the tester library. Off in production unless asked for. */
+  tester?: boolean;
 }
 
 type IO = Server<ClientToServer, ServerToClient>;
@@ -131,7 +134,7 @@ export async function startServer(opts: ServerOptions) {
     botTimers.set(code, setTimeout(() => {
       botTimers.delete(code);
       runBot(code);
-    }, opts.botDelayMs ?? 1100));
+    }, s.testMode ? Math.min(opts.botDelayMs ?? 300, 300) : opts.botDelayMs ?? 1100));
   }
 
   function tryBotMove(s: GameState, move: BotMove): boolean {
@@ -207,7 +210,7 @@ export async function startServer(opts: ServerOptions) {
     }
     socket.data.session = session;
     const joined = new Set<string>();
-    socket.emit('session', { token, playerId: session.playerId, name: session.name, rooms: roomsOf(session.playerId) });
+    socket.emit('session', { token, playerId: session.playerId, name: session.name, rooms: roomsOf(session.playerId), tester: !!opts.tester });
 
     const subscribe = (code: string) => {
       if (joined.has(code)) return;
@@ -229,8 +232,12 @@ export async function startServer(opts: ServerOptions) {
       if (!actionLimiter.allow(session!.playerId, now())) return ack({ ok: false, error: 'err.rateLimited' });
       try {
         const name = sanitizeName(p?.name ?? session!.name);
+        const testMode = p?.tester === true;
+        if (testMode && !opts.tester) return ack({ ok: false, error: 'err.testerDisabled' });
         const code = newCode();
-        const s = createGame({ id: code, code, hostId: session!.playerId, hostName: name, now: now(), visibility: p?.visibility });
+        const s = createGame({ id: code, code, hostId: session!.playerId, hostName: name, now: now(), visibility: p?.visibility, testMode });
+        // Tester rooms play fast: short timers, everything else at defaults.
+        if (testMode) Object.assign(s.config, { turnSeconds: 30, auctionSeconds: 8, tradeSeconds: 30, timeLimitMinutes: 0 });
         rooms.set(code, s);
         persist(s);
         subscribe(code);
@@ -240,6 +247,12 @@ export async function startServer(opts: ServerOptions) {
       } catch (e) {
         ack(errorAck(e));
       }
+    });
+
+    socket.on('tester:library', (_p, ack) => {
+      if (typeof ack !== 'function') return;
+      if (!opts.tester) return ack({ ok: false, error: 'err.testerDisabled' });
+      ack({ ok: true, library: testerLibrary() });
     });
 
     socket.on('rooms:list', (_p, ack) => {

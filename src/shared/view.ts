@@ -1,5 +1,5 @@
 /** Per-viewer projection of game state: hides deck order, dedup ids and other players' private trades. */
-import type { GameState, PlayerId, Visibility } from './types.js';
+import type { GameState, Lang, PlayerId, Visibility } from './types.js';
 
 export type GameView = Omit<GameState, 'decks' | 'processed'> & {
   decks: { chance: number; community: number };
@@ -28,9 +28,16 @@ export interface PublicRoom {
   maxPlayers: number;
 }
 
+/** Tester library: every hidden text in the game, with example amounts and quiz answers. */
+export interface TesterLibrary {
+  cards: { id: string; deck: 'chance' | 'community'; category: string; text: Record<Lang, string>; choices: Record<Lang, string>[] }[];
+  quiz: { id: string; q: Record<Lang, string>; options: Record<Lang, string>[]; answer: number }[];
+  inflation: { id: string; weight: number; text: Record<Lang, string> }[];
+}
+
 /** Wire protocol shared by client and server. */
 export interface ServerToClient {
-  session: (s: { token: string; playerId: PlayerId; name: string; rooms: string[] }) => void;
+  session: (s: { token: string; playerId: PlayerId; name: string; rooms: string[]; tester?: boolean }) => void;
   state: (p: { view: GameView; events: import('./types.js').GameEvent[] }) => void;
   kicked: (p: { code: string; reason: string }) => void;
 }
@@ -39,7 +46,8 @@ export type Ack<T = object> = (res: ({ ok: true } & T) | { ok: false; error: str
 
 export interface ClientToServer {
   profile: (p: { name: string }, ack: Ack) => void;
-  'room:create': (p: { name?: string; visibility?: Visibility }, ack: Ack<{ code: string }>) => void;
+  'room:create': (p: { name?: string; visibility?: Visibility; tester?: boolean }, ack: Ack<{ code: string }>) => void;
+  'tester:library': (p: object, ack: Ack<{ library: TesterLibrary }>) => void;
   'rooms:list': (p: object, ack: Ack<{ rooms: PublicRoom[] }>) => void;
   'room:join': (p: { code: string; name?: string }, ack: Ack<{ code: string }>) => void;
   'room:leave': (p: { code: string }, ack: Ack) => void;
