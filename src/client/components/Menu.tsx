@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { PublicRoom } from '../../shared/view';
 import { store, useStore } from '../store';
 import { useT } from '../i18n';
 import { LangMute } from './common';
@@ -14,6 +15,20 @@ export function Menu() {
   const [code, setCode] = useState('');
   const [help, setHelp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState<PublicRoom[]>([]);
+
+  // Refresh the public room list while the menu is visible.
+  useEffect(() => {
+    if (!connected) return;
+    let live = true;
+    const load = () => store.listRooms().then((r) => live && setOpen(r));
+    void load();
+    const timer = setInterval(load, 4000);
+    return () => {
+      live = false;
+      clearInterval(timer);
+    };
+  }, [connected]);
 
   const ensureName = async () => {
     const n = draft.trim() || t('menu.namePlaceholder').replace(/^.*?, /, '');
@@ -61,14 +76,34 @@ export function Menu() {
           </div>
         )}
 
-        <button className="primary big" disabled={!connected || busy} onClick={() => run(() => store.createRoom())}>
-          {t('menu.create')}
-        </button>
+        <div className="create-row">
+          <button className="primary big" disabled={!connected || busy} onClick={() => run(() => store.createRoom('private'))}>
+            {t('menu.create')}
+          </button>
+          <button className="secondary big" disabled={!connected || busy} onClick={() => run(() => store.createRoom('public'))} data-testid="create-public">
+            {t('menu.createPublic')}
+          </button>
+        </div>
 
         <form className="join-row" onSubmit={(e) => { e.preventDefault(); run(() => store.join(code)); }}>
           <input value={code} maxLength={5} placeholder={t('menu.codePlaceholder')} onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))} aria-label={t('menu.codePlaceholder')} />
           <button className="secondary" disabled={!connected || busy || code.length < 4}>{t('menu.join')}</button>
         </form>
+
+        <section className="public-rooms" aria-labelledby="public-rooms-title">
+          <h2 id="public-rooms-title">{t('menu.publicRooms')}</h2>
+          {open.length === 0 ? <p className="hint">{t('menu.noPublicRooms')}</p> : (
+            <ul>
+              {open.map((r) => (
+                <li key={r.code}>
+                  <span className="nm">{t('menu.roomOf', { name: r.hostName })}</span>
+                  <span className="hint">{t('menu.roomSeats', { n: r.players, max: r.maxPlayers })}{r.bots > 0 && ` · ${t('menu.roomBots', { n: r.bots })}`}</span>
+                  <button className="secondary small" disabled={!connected || busy} onClick={() => run(() => store.join(r.code))}>{t('menu.join')}</button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <button className="link" onClick={() => setHelp(true)}>{t('menu.howToPlay')}</button>
         {!connected && <p className="status-line">{t('common.connecting')}</p>}

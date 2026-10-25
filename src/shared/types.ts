@@ -1,6 +1,7 @@
 // Core domain types shared by server, client and tests.
 
 export type Lang = 'en' | 'ru';
+export type Visibility = 'public' | 'private';
 export type PlayerId = string;
 export type Creditor = PlayerId | 'bank';
 
@@ -190,6 +191,8 @@ export interface GameState {
   code: string;
   hostId: PlayerId;
   status: 'lobby' | 'playing' | 'finished';
+  /** Public lobbies are listed on everyone's main menu. Missing on rooms saved before this existed: private. */
+  visibility?: Visibility;
   config: GameConfig;
   players: Player[];
   /** Index into players of the active player. */
@@ -263,6 +266,7 @@ export type Action =
   | { type: 'setToken'; token: TokenId }
   | { type: 'configure'; config: Partial<GameConfig> }
   | { type: 'start' }
+  | { type: 'setVisibility'; visibility: Visibility }
   | { type: 'addBot' }
   | { type: 'removeBot'; playerId: PlayerId }
   // turn

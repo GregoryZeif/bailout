@@ -5,8 +5,8 @@
  */
 import { useSyncExternalStore } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import type { Action, GameEvent, Lang } from '../shared/types';
-import type { ClientToServer, GameView, ServerToClient } from '../shared/view';
+import type { Action, GameEvent, Lang, Visibility } from '../shared/types';
+import type { ClientToServer, GameView, PublicRoom, ServerToClient } from '../shared/view';
 import { play, setMuted } from './sound';
 
 export interface Toast {
@@ -175,25 +175,31 @@ class Store {
     if (this.socket?.connected) await this.emit('profile', { name });
   }
 
-  private emit<K extends 'profile' | 'room:create' | 'room:join' | 'room:leave' | 'action'>(
+  private emit<K extends 'profile' | 'room:create' | 'room:join' | 'room:leave' | 'rooms:list' | 'action'>(
     ev: K,
     payload: Parameters<ClientToServer[K]>[0],
     timeoutMs = 8000,
-  ): Promise<{ ok: boolean; error?: string; params?: Record<string, string | number>; code?: string }> {
+  ): Promise<{ ok: boolean; error?: string; params?: Record<string, string | number>; code?: string; rooms?: PublicRoom[] }> {
     return new Promise((resolve) => {
       const s = this.socket;
       if (!s || !s.connected) return resolve({ ok: false, error: 'common.offline' });
-      s.timeout(timeoutMs).emit(ev as 'action', payload as never, ((err: Error | null, res: { ok: boolean; error?: string; code?: string }) => {
+      s.timeout(timeoutMs).emit(ev as 'action', payload as never, ((err: Error | null, res: { ok: boolean; error?: string; code?: string; rooms?: PublicRoom[] }) => {
         if (err) resolve({ ok: false, error: 'err.timeout' });
         else resolve(res);
       }) as never);
     });
   }
 
-  async createRoom() {
-    const res = await this.emit('room:create', { name: this.state.name });
+  async createRoom(visibility: Visibility = 'private') {
+    const res = await this.emit('room:create', { name: this.state.name, visibility });
     if (!res.ok) return this.toast(res.error ?? 'err.server', res.params);
     this.enterRoom(res.code!);
+  }
+
+  /** Open public lobbies; empty when offline (the menu simply shows none). */
+  async listRooms(): Promise<PublicRoom[]> {
+    const res = await this.emit('rooms:list', {});
+    return res.ok ? res.rooms ?? [] : [];
   }
 
   async join(code: string, silent = false) {

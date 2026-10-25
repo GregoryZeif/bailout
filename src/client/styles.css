@@ -119,6 +119,16 @@ input, select {
 .lobby-players li.offline { opacity: 0.5; }
 .lobby-players .nm { flex: 1; font-weight: 600; }
 .lobby-players .icon-btn { padding: 0 0.5em; line-height: 1.4; font-size: 1rem; }
+.create-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.create-row > button { flex: 1 1 12rem; }
+.public-rooms { margin-top: 1rem; text-align: left; }
+.public-rooms h2 { font-size: 1rem; margin: 0 0 0.4rem; }
+.public-rooms ul { list-style: none; padding: 0; margin: 0; }
+.public-rooms li { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px dashed var(--line); }
+.public-rooms .nm { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.public-rooms .hint { margin: 0; white-space: nowrap; }
+.visibility { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: -0.25rem 0 0.75rem; }
+.visibility .hint { flex: 1; margin: 0; min-width: 10rem; }
 .add-bot { align-self: flex-start; margin: -0.5rem 0 1rem; }
 .tok { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 2px rgba(0,0,0,.2); }
 .tok.big { width: 72px; height: 72px; flex: none; }

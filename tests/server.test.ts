@@ -174,3 +174,43 @@ describe('bots on the server', () => {
     }
   });
 });
+
+describe('public rooms', () => {
+  it('lists only open public lobbies and lets anyone join from the list', async () => {
+    const pubDir = mkdtempSync(join(tmpdir(), 'mono-pub-'));
+    const server = await startServer({ port: 0, dataDir: pubDir, tickMs: 100, botDelayMs: 5 });
+    type List = { ok: boolean; rooms: { code: string; hostName: string; players: number; bots: number; maxPlayers: number }[] };
+    try {
+      const host = await client(server.port, undefined, 'Hostess');
+      const other = await client(server.port, undefined, 'Secret');
+      const guest = await client(server.port, undefined, 'Guest');
+      const pub = await host.emit('room:create', { name: 'Hostess', visibility: 'public' });
+      host.code = pub.code!;
+      const priv = await other.emit('room:create', { name: 'Secret' });
+      other.code = priv.code!;
+      await host.act({ type: 'addBot' });
+
+      let list = await guest.emit<List>('rooms:list', {});
+      expect(list.rooms.map((r) => r.code)).toEqual([pub.code]);
+      expect(list.rooms[0]).toMatchObject({ hostName: 'Hostess', players: 2, bots: 1, maxPlayers: 6 });
+
+      // Visibility is host-only and can be flipped either way.
+      expect((await guest.emit('room:join', { code: pub.code, name: 'Guest' })).ok).toBe(true);
+      guest.code = pub.code!;
+      expect((await guest.act({ type: 'setVisibility', visibility: 'private' })).error).toBe('err.hostOnly');
+      expect(await other.act({ type: 'setVisibility', visibility: 'public' })).toEqual({ ok: true });
+      list = await guest.emit<List>('rooms:list', {});
+      expect(list.rooms.map((r) => r.code).sort()).toEqual([pub.code, priv.code].sort());
+
+      // Started games disappear from the list.
+      await guest.act({ type: 'setReady', ready: true });
+      expect(await host.act({ type: 'start' })).toEqual({ ok: true });
+      list = await guest.emit<List>('rooms:list', {});
+      expect(list.rooms.map((r) => r.code)).toEqual([priv.code]);
+      for (const c of [host, other, guest]) c.sock.disconnect();
+    } finally {
+      await server.close();
+      rmSync(pubDir, { recursive: true, force: true });
+    }
+  });
+});

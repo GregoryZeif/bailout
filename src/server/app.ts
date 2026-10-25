@@ -7,13 +7,14 @@ import { Server, type Socket } from 'socket.io';
 import { addPlayer, applyAction, createGame, humans, sanitizeName, setConnected, tick, type Ctx } from '../shared/engine.js';
 import { RULES } from '../shared/board.js';
 import { GameError, type Action, type GameEvent, type GameState } from '../shared/types.js';
-import { viewFor, type ClientToServer, type ServerToClient } from '../shared/view.js';
+import { viewFor, type ClientToServer, type PublicRoom, type ServerToClient } from '../shared/view.js';
 import { botFallback, botMove, type BotMove } from './bot.js';
 import { Store, type Session } from './db.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const FINISHED_TTL_MS = 24 * 3600_000;
 const IDLE_TTL_MS = 48 * 3600_000;
+const PUBLIC_LIST_LIMIT = 20;
 
 export interface ServerOptions {
   port: number;
@@ -156,6 +157,22 @@ export async function startServer(opts: ServerOptions) {
     log('[bot] stuck', code, move.action.type);
   }
 
+  /** Open public lobbies with a seat free and a host who is around, newest first. */
+  function publicRooms(): PublicRoom[] {
+    return [...rooms.values()]
+      .filter((r) => r.status === 'lobby' && r.visibility === 'public' && r.players.length < r.config.maxPlayers
+        && r.players.some((p) => p.id === r.hostId && p.connected))
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, PUBLIC_LIST_LIMIT)
+      .map((r) => ({
+        code: r.code,
+        hostName: r.players.find((p) => p.id === r.hostId)!.name,
+        players: r.players.length,
+        bots: r.players.filter((p) => p.bot).length,
+        maxPlayers: r.config.maxPlayers,
+      }));
+  }
+
   function roomsOf(playerId: string): string[] {
     return [...rooms.values()].filter((r) => r.status !== 'finished' && r.players.some((p) => p.id === playerId)).map((r) => r.code);
   }
@@ -213,7 +230,7 @@ export async function startServer(opts: ServerOptions) {
       try {
         const name = sanitizeName(p?.name ?? session!.name);
         const code = newCode();
-        const s = createGame({ id: code, code, hostId: session!.playerId, hostName: name, now: now() });
+        const s = createGame({ id: code, code, hostId: session!.playerId, hostName: name, now: now(), visibility: p?.visibility });
         rooms.set(code, s);
         persist(s);
         subscribe(code);
@@ -223,6 +240,11 @@ export async function startServer(opts: ServerOptions) {
       } catch (e) {
         ack(errorAck(e));
       }
+    });
+
+    socket.on('rooms:list', (_p, ack) => {
+      if (typeof ack !== 'function') return;
+      ack({ ok: true, rooms: publicRooms() });
     });
 
     socket.on('room:join', (p, ack) => {

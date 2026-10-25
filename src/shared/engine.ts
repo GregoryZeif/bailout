@@ -19,7 +19,7 @@ import {
 } from './rules.js';
 import {
   GameError, type Action, type Creditor, type GameConfig, type GameEvent, type GameState, type Player,
-  type PlayerId, type TradeSide, type TurnPhase,
+  type PlayerId, type TradeSide, type TurnPhase, type Visibility,
 } from './types.js';
 
 export interface Ctx {
@@ -40,12 +40,13 @@ const fail = (code: string, params: Record<string, string | number> = {}): never
 
 // ───────────────────────── creation & lobby ─────────────────────────
 
-export function createGame(opts: { id: string; code: string; hostId: PlayerId; hostName: string; now: number }): GameState {
+export function createGame(opts: { id: string; code: string; hostId: PlayerId; hostName: string; now: number; visibility?: Visibility }): GameState {
   const s: GameState = {
     id: opts.id,
     code: opts.code,
     hostId: opts.hostId,
     status: 'lobby',
+    visibility: opts.visibility === 'public' ? 'public' : 'private',
     config: { ...DEFAULT_CONFIG },
     players: [],
     current: 0,
@@ -1004,6 +1005,12 @@ function lobbyAction(e: E, p: Player, action: Action) {
       if (next.maxPlayers < s.players.length) fail('err.badConfig', { key: 'maxPlayers' });
       s.config = next;
       for (const o of s.players) if (o.id !== s.hostId && !o.bot) o.ready = false;
+      return;
+    }
+    case 'setVisibility': {
+      if (p.id !== s.hostId) fail('err.hostOnly');
+      if (action.visibility !== 'public' && action.visibility !== 'private') fail('err.badAction');
+      s.visibility = action.visibility;
       return;
     }
     case 'addBot': {
