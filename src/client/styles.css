@@ -261,7 +261,8 @@ input, select {
   border-radius: 12px;
   box-shadow: var(--shadow), 0 0 0 4px var(--cream-2);
   color: var(--ink);
-  font-size: clamp(8px, 1.7cqi, 16px);
+  /* Scale with the board itself (it may be height-limited), not with the column width. */
+  font-size: clamp(8px, calc(var(--bs) * 0.0185), 16px);
 }
 .game-screen.narrow .board { --bs: min(100cqi, 760px); }
 .tile {
@@ -287,8 +288,8 @@ input, select {
 .tile.side-right .tile-body { padding-left: 19%; }
 .tile-name { font-size: 0.95em; line-height: 1.05; letter-spacing: -0.01em; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; hyphens: auto; }
 .tile.corner .tile-name { font-family: var(--display); font-size: 1.1em; -webkit-line-clamp: 3; }
-/* Russian words run long: a touch smaller so names fit in three lines. */
-html[lang='ru'] .tile:not(.corner) .tile-name { font-size: 0.86em; }
+.tile:not(.corner) .tile-name.mid { font-size: 0.86em; }
+.tile:not(.corner) .tile-name.long { font-size: 0.78em; line-height: 1.02; -webkit-line-clamp: 4; }
 .tile-price { font-size: 0.9em; font-weight: 700; color: var(--green-2); }
 .tile-icon { line-height: 0; }
 .tile-icon svg { width: 1.7em; height: 1.7em; }
@@ -466,7 +467,7 @@ html[lang='ru'] .tile:not(.corner) .tile-name { font-size: 0.86em; }
 .quiz-review li.ok strong { color: var(--green-2); }
 .quiz-review li.bad strong { color: var(--red); }
 .help-list li { margin: 0.5em 0; line-height: 1.4; }
-.prop-modal .deed-band { height: 26px; border-radius: 6px; margin-bottom: 0.6rem; }
+.prop-modal .deed-band { min-height: 26px; border-radius: 6px; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: center; padding: 0.3em 0.6em; color: #fff; font-weight: 800; font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45); }
 .deed-icon { display: flex; justify-content: center; margin-bottom: 0.5rem; }
 .deed { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 0.4rem 0; }
 .deed th { text-align: left; font-weight: 500; padding: 0.25em 0; color: var(--navy-3); }

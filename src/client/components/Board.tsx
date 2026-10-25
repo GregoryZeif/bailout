@@ -66,8 +66,19 @@ function usePositions(view: GameView) {
   return disp;
 }
 
+/**
+ * Long names get smaller type (and a fourth line) so the whole name fits on the tile.
+ * Cyrillic runs wider, and side tiles with an icon beside the name have less room.
+ */
+function nameFit(name: string, lang: string, cramped: boolean): string {
+  const len = name.length * (lang === 'ru' ? 1.2 : 1) * (cramped ? 1.4 : 1);
+  if (len > 21) return ' long';
+  if (len > 15) return ' mid';
+  return '';
+}
+
 export function Board({ view, onSelect, children }: { view: GameView; onSelect: (i: number) => void; children: ReactNode }) {
-  const { t, money } = useT();
+  const { t, money, lang } = useT();
   const disp = usePositions(view);
   const cur = view.players[view.current];
   const s = view as unknown as GameState;
@@ -86,14 +97,14 @@ export function Board({ view, onSelect, children }: { view: GameView; onSelect: 
             style={{ gridRow: c.row, gridColumn: c.col, ...(owner ? { '--owner': owner.color } : {}) } as CSSProperties}
             onClick={() => onSelect(d.index)}
             aria-label={t(`spaces.${d.key}`)}
-            title={t(`spaces.${d.key}`)}
+            title={d.group ? `${t(`spaces.${d.key}`)} · ${t(`group.${d.group}`)}` : t(`spaces.${d.key}`)}
             data-space={d.index}
           >
             {d.group && <span className="band" style={{ background: GROUP_COLORS[d.group] }} />}
             {owner && <span className="owner-mark" style={{ background: owner.color }} title={owner.name} />}
             <span className="tile-body">
               {d.kind !== 'property' && <span className="tile-icon"><SpaceIcon kind={d.kind} size={c.corner ? 30 : 18} /></span>}
-              <span className="tile-name">{t(`spaces.${d.key}`)}</span>
+              <span className={`tile-name${nameFit(t(`spaces.${d.key}`), lang, d.kind !== 'property' && (c.side === 'left' || c.side === 'right'))}`}>{t(`spaces.${d.key}`)}</span>
               {d.price !== undefined && !o && <span className="tile-price">{money(currentPrice(s, d.index))}</span>}
               {o && o.upgrades > 0 && (
                 <span className="tile-ups" aria-label={`${o.upgrades}`}>

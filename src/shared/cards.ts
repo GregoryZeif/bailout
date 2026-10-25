@@ -114,8 +114,8 @@ export const CARDS: CardDef[] = [
     id: 'pol_summit', deck: 'chance', category: 'political',
     effects: [{ kind: 'moveTo', space: 26 }],
     text: {
-      en: 'Emergency summit at a luxury resort. Advance to the Private Hospital Wing.',
-      ru: 'Экстренный саммит на роскошном курорте. Перейдите в «Частную клинику».',
+      en: 'Emergency summit at a luxury resort, catered by robots. Advance to AI Landlord.',
+      ru: 'Экстренный саммит на роскошном курорте с роботами-официантами. Перейдите на «ИИ-арендодателя».',
     },
   },
   {
@@ -284,8 +284,8 @@ export const CARDS: CardDef[] = [
     id: 'corp_privatize', deck: 'chance', category: 'corporate',
     effects: [{ kind: 'moveTo', space: 12 }],
     text: {
-      en: 'The water company is privatized again. Advance to Privatized Water Supply.',
-      ru: 'Водоканал снова приватизировали. Перейдите на «Приватизированный водопровод».',
+      en: 'The water company is privatized again. Advance to Thames Water (Brown).',
+      ru: 'Водоканал снова приватизировали. Перейдите на «Thames Water (бурая)».',
     },
   },
   {
@@ -313,8 +313,8 @@ export const CARDS: CardDef[] = [
     id: 'luck_penthouse', deck: 'chance', category: 'luck',
     effects: [{ kind: 'moveTo', space: 39 }],
     text: {
-      en: 'A real-estate agent insists you "just look" at the Mars Colony Penthouse. Advance there.',
-      ru: 'Риелтор настаивает, чтобы вы «просто посмотрели» пентхаус на Марсе. Перейдите туда.',
+      en: 'A lobbyist insists you "just look" at Buy the Government. Advance there.',
+      ru: 'Лоббист настаивает, чтобы вы «просто посмотрели» на «Купи правительство». Перейдите туда.',
     },
   },
 

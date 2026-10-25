@@ -90,7 +90,7 @@ describe('movement and Start', () => {
 describe('buying', () => {
   it('rejects purchase without funds and allows with funds', () => {
     const g = new TestGame();
-    g.rollFrom(0, 1, 2); // 3 basementStudio 2200
+    g.rollFrom(0, 1, 2); // 3 affordableSoldOut 2200
     expectErr(() => g.act('p0', { type: 'buy' }), 'err.insufficientFunds');
     g.p('p0').cash = 5000;
     g.act('p0', { type: 'buy' });
