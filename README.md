@@ -11,7 +11,7 @@ Unaffordable housing, student debt, inflation, predatory credit, bureaucratic ab
 
 ## Quick start
 
-Requires **Node 20+** (tested on Node 22).
+Requires **Node 22.12+**. Older Node 22 releases crash when loading `better-sqlite3`.
 
 ```bash
 npm install
