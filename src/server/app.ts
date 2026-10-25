@@ -31,6 +31,8 @@ export interface ServerOptions {
   tester?: boolean;
   /** Secret that unlocks tester mode for one browser (sent in the socket handshake). */
   testerKey?: string;
+  /** Player ids that always get tester mode (their login token stays the secret). */
+  testers?: string[];
 }
 
 type IO = Server<ClientToServer, ServerToClient>;
@@ -211,7 +213,6 @@ export async function startServer(opts: ServerOptions) {
   io.on('connection', (raw) => {
     const socket = raw as Sock;
     const auth = (socket.handshake.auth ?? {}) as { token?: string; name?: string; testerKey?: string };
-    const tester = !!opts.tester || sameSecret(auth.testerKey, opts.testerKey);
     let token = typeof auth.token === 'string' ? auth.token : '';
     let session = token ? store.getSession(token) : null;
     if (!session) {
@@ -220,6 +221,7 @@ export async function startServer(opts: ServerOptions) {
       session = created.session;
     }
     socket.data.session = session;
+    const tester = !!opts.tester || sameSecret(auth.testerKey, opts.testerKey) || !!opts.testers?.includes(session.playerId);
     const joined = new Set<string>();
     socket.emit('session', { token, playerId: session.playerId, name: session.name, rooms: roomsOf(session.playerId), tester });
 

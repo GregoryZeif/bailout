@@ -178,6 +178,9 @@ input, select {
 .lib-choices, .lib-options { margin: 0.3rem 0 0; padding-left: 1.3rem; }
 .lib-options li.right { color: var(--green-2); font-weight: 700; }
 .footer-note { font-size: 0.74rem; color: rgba(244, 236, 216, 0.55); margin: 22px auto 0; max-width: 640px; text-align: center; }
+.player-id { display: block; margin-top: 0.4rem; }
+.player-id code { color: rgba(244, 236, 216, 0.75); user-select: all; }
+.player-id .link { font-size: inherit; }
 .status-line { font-size: 0.85rem; color: var(--muted); }
 
 /* ── lobby ── */

@@ -238,3 +238,31 @@ describe('tester key', () => {
     }
   });
 });
+
+describe('tester player list', () => {
+  it('unlocks tester mode for listed player ids only', async () => {
+    const listDir = mkdtempSync(join(tmpdir(), 'bailout-list-'));
+    const server = await startServer({ port: 0, dataDir: listDir, tickMs: 100, testers: [] });
+    try {
+      const a = await client(server.port, undefined, 'Listed');
+      await server.close();
+      // Restart with that player's id on the list; the same login token must get tester mode.
+      const listed = await startServer({ port: 0, dataDir: listDir, tickMs: 100, testers: [a.playerId] });
+      try {
+        const sockFor = (token?: string) => connect(`http://localhost:${listed.port}`, { auth: { token, name: 'X' }, transports: ['websocket'], forceNew: true });
+        const sessionOf = (sock: ReturnType<typeof sockFor>) => new Promise<{ tester?: boolean; playerId: string }>((resolve) => sock.once('session', resolve));
+        const same = sockFor(a.token);
+        expect((await sessionOf(same)).tester).toBe(true);
+        const stranger = sockFor();
+        expect((await sessionOf(stranger)).tester).toBe(false);
+        same.disconnect();
+        stranger.disconnect();
+      } finally {
+        await listed.close();
+      }
+      a.sock.disconnect();
+    } finally {
+      rmSync(listDir, { recursive: true, force: true });
+    }
+  });
+});

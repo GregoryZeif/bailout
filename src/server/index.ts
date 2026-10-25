@@ -19,6 +19,8 @@ startServer({
   tester: process.env.BAILOUT_TESTER === '1' || (process.env.BAILOUT_TESTER !== '0' && import.meta.url.endsWith('.ts')),
   // On a live site, tester mode opens only for browsers that know this key (ignored if too short to be safe).
   testerKey: (process.env.BAILOUT_TESTER_KEY?.length ?? 0) >= 16 ? process.env.BAILOUT_TESTER_KEY : undefined,
+  // Or list player ids (shown on the main menu), separated by commas or spaces.
+  testers: (process.env.BAILOUT_TESTERS ?? '').split(/[\s,]+/).filter((id) => /^u_[\w-]{6,}$/.test(id)),
 }).then((server) => {
   const shutdown = async (sig: string) => {
     console.log(`[process] ${sig} received, saving rooms…`);
