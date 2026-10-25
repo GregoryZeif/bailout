@@ -6,6 +6,7 @@ import { useT } from '../i18n';
 import { BibiSketch } from './BibiSketch';
 import { LangMute } from './common';
 import { HelpModal } from './HelpModal';
+import { LibraryModal } from './Tester';
 import { TokenIcon } from './icons';
 
 const HEADLINES = ['menu.news1', 'menu.news2', 'menu.news3', 'menu.news4', 'menu.news5'];
@@ -20,6 +21,8 @@ export function Menu() {
   const name = useStore((s) => s.name);
   const rooms = useStore((s) => s.rooms);
   const connected = useStore((s) => s.connected);
+  const tester = useStore((s) => s.tester);
+  const [library, setLibrary] = useState(false);
   const [draft, setDraft] = useState(name);
   const [code, setCode] = useState('');
   const [help, setHelp] = useState(false);
@@ -140,6 +143,17 @@ export function Menu() {
             )}
           </section>
 
+          {tester && (
+            <section className="tester-box" aria-label={t('tester.title')}>
+              <h2>🧪 {t('tester.title')}</h2>
+              <p className="hint">{t('tester.menuHint')}</p>
+              <div className="btn-row">
+                <button className="secondary small" disabled={off} onClick={() => run(() => store.startTestGame())} data-testid="tester-game">{t('tester.startGame')}</button>
+                <button className="ghost small" disabled={!connected} onClick={() => setLibrary(true)}>{t('tester.openLibrary')}</button>
+              </div>
+            </section>
+          )}
+
           <button className="link" onClick={() => setHelp(true)}>{t('menu.howToPlay')}</button>
           {!connected && <p className="status-line">{t('common.connecting')}</p>}
         </section>
@@ -157,6 +171,7 @@ export function Menu() {
 
       <footer className="footer-note">{t('menu.footer')}</footer>
       {help && <HelpModal onClose={() => setHelp(false)} />}
+      {library && <LibraryModal onClose={() => setLibrary(false)} />}
     </div>
   );
 }

@@ -85,7 +85,8 @@ export function Lobby({ view }: { view: GameView }) {
           <div className="visibility">
             <span className={`badge ${isPublic ? 'ok' : ''}`}>{t(isPublic ? 'lobby.public' : 'lobby.private')}</span>
             <span className="hint">{t(isPublic ? 'lobby.publicHint' : 'lobby.privateHint')}</span>
-            {isHost && (
+            {view.testMode && <span className="badge warn">🧪 {t('tester.title')}</span>}
+            {isHost && !view.testMode && (
               <button className="ghost small" onClick={() => store.act({ type: 'setVisibility', visibility: isPublic ? 'private' : 'public' })} data-testid="toggle-visibility">
                 {t(isPublic ? 'lobby.makePrivate' : 'lobby.makePublic')}
               </button>

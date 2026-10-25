@@ -10,6 +10,7 @@ import { HelpModal } from './HelpModal';
 import { CardOverlay, QuizOverlay } from './Overlays';
 import { PortfolioModal, PropertyModal } from './PropertyModal';
 import { PlayersPanel, SidePanel, type SideTab } from './SidePanel';
+import { TesterModal } from './Tester';
 import { TradeModal } from './TradeModal';
 
 function useMedia(q: string) {
@@ -33,6 +34,7 @@ export function Game({ view }: { view: GameView }) {
   const [mobileTab, setMobileTab] = useState<'players' | SideTab>('players');
   const [menu, setMenu] = useState(false);
   const [help, setHelp] = useState(false);
+  const [tester, setTester] = useState(false);
   const [bankruptSeen, setBankruptSeen] = useState(false);
   const me = view.players.find((p) => p.id === view.you);
   const myDebt = view.debts.filter((d) => d.debtorId === view.you).reduce((n, d) => n + d.amount, 0);
@@ -54,6 +56,7 @@ export function Game({ view }: { view: GameView }) {
           </div>
         )}
         <div className="top-right">
+          {view.testMode && <button className="tester-btn small" onClick={() => setTester(true)} data-testid="tester-tools">🧪 {t('tester.short')}</button>}
           <LangMute />
           <button className="icon-btn" onClick={() => setMenu(true)} aria-label={t('hud.menu')}>☰</button>
         </div>
@@ -119,6 +122,7 @@ export function Game({ view }: { view: GameView }) {
         </Modal>
       )}
       {help && <HelpModal onClose={() => setHelp(false)} />}
+      {tester && <TesterModal view={view} onClose={() => setTester(false)} />}
     </div>
   );
 }
