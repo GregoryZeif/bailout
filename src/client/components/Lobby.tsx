@@ -17,6 +17,7 @@ export function Lobby({ view }: { view: GameView }) {
   const { t } = useT();
   const me = view.players.find((p) => p.id === view.you)!;
   const isHost = view.hostId === view.you;
+  const isPublic = view.visibility === 'public';
   const [copied, setCopied] = useState(false);
   const canStart = view.players.length >= 2 && view.players.every((p) => p.id === view.hostId || p.ready);
 
@@ -45,6 +46,15 @@ export function Lobby({ view }: { view: GameView }) {
             <span>{t('lobby.code')}</span>
             <strong data-testid="room-code">{view.code}</strong>
             <button className="secondary small" onClick={copy}>{copied ? t('common.copied') : t('common.copy')}</button>
+          </div>
+          <div className="visibility">
+            <span className={`badge ${isPublic ? 'ok' : ''}`}>{t(isPublic ? 'lobby.public' : 'lobby.private')}</span>
+            <span className="hint">{t(isPublic ? 'lobby.publicHint' : 'lobby.privateHint')}</span>
+            {isHost && (
+              <button className="ghost small" onClick={() => store.act({ type: 'setVisibility', visibility: isPublic ? 'private' : 'public' })} data-testid="toggle-visibility">
+                {t(isPublic ? 'lobby.makePrivate' : 'lobby.makePublic')}
+              </button>
+            )}
           </div>
           <h3>{t('lobby.players', { n: view.players.length, max: view.config.maxPlayers })}</h3>
           <ul className="lobby-players">
