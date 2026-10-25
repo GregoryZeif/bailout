@@ -86,6 +86,7 @@ export function Board({ view, onSelect, children }: { view: GameView; onSelect: 
             style={{ gridRow: c.row, gridColumn: c.col }}
             onClick={() => onSelect(d.index)}
             aria-label={t(`spaces.${d.key}`)}
+            title={t(`spaces.${d.key}`)}
             data-space={d.index}
           >
             {d.group && <span className="band" style={{ background: GROUP_COLORS[d.group] }} />}
