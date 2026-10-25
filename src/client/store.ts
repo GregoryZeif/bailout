@@ -57,6 +57,24 @@ for (const k of ['lang', 'name', 'muted', 'token', 'room']) {
   if (old !== null) ls.set(`mono.${k}`, null);
 }
 
+/**
+ * Tester key: opening the site with ?tester=KEY remembers it in this browser and
+ * removes it from the address bar; ?tester=off forgets it. The server decides
+ * whether the key is right.
+ */
+function readTesterKey(): string | null {
+  if (typeof location === 'undefined') return null;
+  const url = new URL(location.href);
+  const given = url.searchParams.get('tester');
+  if (given !== null) {
+    ls.set('bailout.testerKey', given === 'off' || !given ? null : given);
+    url.searchParams.delete('tester');
+    history.replaceState(null, '', url.pathname + url.search + url.hash);
+  }
+  return ls.get('bailout.testerKey');
+}
+const testerKey = readTesterKey();
+
 function detectLang(): Lang {
   const saved = ls.get('bailout.lang');
   if (saved === 'en' || saved === 'ru') return saved;
@@ -111,7 +129,7 @@ class Store {
   connect() {
     if (this.socket) return;
     const socket: Socket<ServerToClient, ClientToServer> = io({
-      auth: (cb) => cb({ token: ls.get('bailout.token') ?? undefined, name: this.state.name || undefined }),
+      auth: (cb) => cb({ token: ls.get('bailout.token') ?? undefined, name: this.state.name || undefined, testerKey: testerKey ?? undefined }),
       transports: ['websocket', 'polling'],
       reconnectionDelayMax: 4000,
     });

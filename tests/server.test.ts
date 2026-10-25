@@ -214,3 +214,27 @@ describe('public rooms', () => {
     }
   });
 });
+
+describe('tester key', () => {
+  it('unlocks tester mode only for a browser that sends the right key', async () => {
+    const keyDir = mkdtempSync(join(tmpdir(), 'bailout-key-'));
+    const key = 'k'.repeat(32);
+    const server = await startServer({ port: 0, dataDir: keyDir, tickMs: 100, testerKey: key });
+    const tryKey = async (testerKey?: string) => {
+      const sock = connect(`http://localhost:${server.port}`, { auth: { name: 'T', testerKey }, transports: ['websocket'], forceNew: true });
+      const tester = await new Promise<boolean>((resolve) => sock.once('session', (x: { tester?: boolean }) => resolve(!!x.tester)));
+      const lib = await new Promise<{ ok: boolean; error?: string }>((resolve) => sock.emit('tester:library', {}, resolve));
+      const room = await new Promise<{ ok: boolean; error?: string }>((resolve) => sock.emit('room:create', { name: 'T', tester: true }, resolve));
+      sock.disconnect();
+      return { tester, lib: lib.ok, room: room.ok };
+    };
+    try {
+      expect(await tryKey()).toEqual({ tester: false, lib: false, room: false });
+      expect(await tryKey('wrong-key-wrong-key-wrong-key-wr')).toEqual({ tester: false, lib: false, room: false });
+      expect(await tryKey(key)).toEqual({ tester: true, lib: true, room: true });
+    } finally {
+      await server.close();
+      rmSync(keyDir, { recursive: true, force: true });
+    }
+  });
+});
