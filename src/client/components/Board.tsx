@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { BOARD, GROUP_COLORS } from '../../shared/board';
 import { currentPrice } from '../../shared/rules';
 import type { GameState } from '../../shared/types';
@@ -82,8 +82,8 @@ export function Board({ view, onSelect, children }: { view: GameView; onSelect: 
         return (
           <button
             key={d.index}
-            className={`tile side-${c.side} kind-${d.kind}${c.corner ? ' corner' : ''}${o?.mortgaged ? ' mortgaged' : ''}${isCur ? ' current' : ''}`}
-            style={{ gridRow: c.row, gridColumn: c.col }}
+            className={`tile side-${c.side} kind-${d.kind}${c.corner ? ' corner' : ''}${owner ? ' owned' : ''}${o?.mortgaged ? ' mortgaged' : ''}${isCur ? ' current' : ''}`}
+            style={{ gridRow: c.row, gridColumn: c.col, ...(owner ? { '--owner': owner.color } : {}) } as CSSProperties}
             onClick={() => onSelect(d.index)}
             aria-label={t(`spaces.${d.key}`)}
             title={t(`spaces.${d.key}`)}

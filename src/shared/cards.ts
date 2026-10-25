@@ -114,8 +114,8 @@ export const CARDS: CardDef[] = [
     id: 'pol_summit', deck: 'chance', category: 'political',
     effects: [{ kind: 'moveTo', space: 26 }],
     text: {
-      en: 'Emergency summit at a luxury resort. Advance to the $3,000 Ambulance Ride.',
-      ru: 'Экстренный саммит на роскошном курорте. Перейдите на «Скорую помощь за $3000».',
+      en: 'Emergency summit at a luxury resort. Advance to the Private Hospital Wing.',
+      ru: 'Экстренный саммит на роскошном курорте. Перейдите в «Частную клинику».',
     },
   },
   {
@@ -314,7 +314,7 @@ export const CARDS: CardDef[] = [
     effects: [{ kind: 'moveTo', space: 39 }],
     text: {
       en: 'A real-estate agent insists you "just look" at the Mars Colony Penthouse. Advance there.',
-      ru: 'Риелтор настаивает, чтобы вы «просто посмотрели» пентхаус в колонии на Марсе. Перейдите туда.',
+      ru: 'Риелтор настаивает, чтобы вы «просто посмотрели» пентхаус на Марсе. Перейдите туда.',
     },
   },
 
