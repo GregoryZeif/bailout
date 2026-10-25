@@ -45,6 +45,8 @@ export interface Player {
   forfeited: boolean;
   /** Set to true once the player has taken the quiz this jail turn. */
   quizTakenThisTurn: boolean;
+  /** Computer-controlled player, driven by the server. */
+  bot?: boolean;
 }
 
 export interface OwnedProperty {
@@ -261,6 +263,8 @@ export type Action =
   | { type: 'setToken'; token: TokenId }
   | { type: 'configure'; config: Partial<GameConfig> }
   | { type: 'start' }
+  | { type: 'addBot' }
+  | { type: 'removeBot'; playerId: PlayerId }
   // turn
   | { type: 'roll' }
   | { type: 'buy' }

@@ -94,7 +94,15 @@ export function sanitizeName(name: string): string {
   return clean || 'Player';
 }
 
-export function addPlayer(s: GameState, info: { id: PlayerId; name: string }, now: number): void {
+/** Satirical names for computer players; skipped when already taken. */
+export const BOT_NAMES = ['Landlord Larry', 'Crypto Kyle', 'Hedge Fund Hank', 'Lobbyist Lou', 'Austerity Anne', 'Influencer Ivy', 'Consultant Carl'];
+
+/** Humans only: bots never host, never keep an empty room alive. */
+export function humans(s: GameState) {
+  return s.players.filter((p) => !p.bot);
+}
+
+export function addPlayer(s: GameState, info: { id: PlayerId; name: string; bot?: boolean }, now: number): void {
   if (getPlayer(s, info.id)) return; // already joined (reconnect)
   if (s.status !== 'lobby') fail('err.gameInProgress');
   if (s.players.length >= s.config.maxPlayers) fail('err.roomFull');
@@ -115,11 +123,12 @@ export function addPlayer(s: GameState, info: { id: PlayerId; name: string }, no
     jailTurns: 0,
     jailCards: 0,
     bankrupt: false,
-    ready: false,
+    ready: !!info.bot,
     connected: true,
     disconnectedAt: null,
     forfeited: false,
     quizTakenThisTurn: false,
+    ...(info.bot ? { bot: true } : {}),
   });
   pushLog(s, now, 'log.joined', { p: info.id });
   s.updatedAt = now;
@@ -127,7 +136,7 @@ export function addPlayer(s: GameState, info: { id: PlayerId; name: string }, no
 
 export function setConnected(s: GameState, playerId: PlayerId, connected: boolean, now: number): void {
   const p = getPlayer(s, playerId);
-  if (!p) return;
+  if (!p || p.bot) return;
   if (p.connected === connected) return;
   p.connected = connected;
   p.disconnectedAt = connected ? null : now;
@@ -994,7 +1003,22 @@ function lobbyAction(e: E, p: Player, action: Action) {
       }
       if (next.maxPlayers < s.players.length) fail('err.badConfig', { key: 'maxPlayers' });
       s.config = next;
-      for (const o of s.players) if (o.id !== s.hostId) o.ready = false;
+      for (const o of s.players) if (o.id !== s.hostId && !o.bot) o.ready = false;
+      return;
+    }
+    case 'addBot': {
+      if (p.id !== s.hostId) fail('err.hostOnly');
+      const taken = new Set(s.players.map((o) => o.name));
+      const name = BOT_NAMES.find((n) => !taken.has(n)) ?? 'Bot';
+      addPlayer(s, { id: `bot_${(s.seq + 1).toString(36)}${Math.floor(e.ctx.rng() * 1e6).toString(36)}`, name, bot: true }, e.ctx.now);
+      return;
+    }
+    case 'removeBot': {
+      if (p.id !== s.hostId) fail('err.hostOnly');
+      const bot = s.players.find((o) => o.id === action.playerId && o.bot);
+      if (!bot) fail('err.noPlayer');
+      s.players = s.players.filter((o) => o !== bot);
+      log(e, 'log.left', { p: bot!.id });
       return;
     }
     case 'start': {
@@ -1008,8 +1032,11 @@ function lobbyAction(e: E, p: Player, action: Action) {
     case 'leave': {
       s.players = s.players.filter((o) => o.id !== p.id);
       log(e, 'log.left', { p: p.id });
-      if (s.hostId === p.id && s.players.length > 0) {
-        s.hostId = (s.players.find((o) => o.connected) ?? s.players[0]).id;
+      const rest = humans(s);
+      // Bots alone don't keep a lobby: the server deletes the empty room.
+      if (rest.length === 0) s.players = [];
+      else if (s.hostId === p.id) {
+        s.hostId = (rest.find((o) => o.connected) ?? rest[0]).id;
         log(e, 'log.hostChanged', { p: s.hostId });
       }
       return;
@@ -1363,7 +1390,7 @@ export function tick(s: GameState, ctx: Ctx): GameEvent[] {
   // Host migration if the host stays away past the grace period.
   const host = getPlayer(s, s.hostId);
   if (host && !host.connected && host.disconnectedAt !== null && now - host.disconnectedAt > graceMs) {
-    const next = s.players.find((p) => p.connected && !p.bankrupt) ?? s.players.find((p) => p.connected);
+    const next = humans(s).find((p) => p.connected && !p.bankrupt) ?? humans(s).find((p) => p.connected);
     if (next && next.id !== s.hostId) {
       s.hostId = next.id;
       log(e, 'log.hostChanged', { p: next.id });

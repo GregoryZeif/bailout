@@ -139,3 +139,38 @@ describe('multiplayer server', () => {
     await server.close();
   });
 });
+
+describe('bots on the server', () => {
+  it('a human plays against a server-driven bot', async () => {
+    const botDir = mkdtempSync(join(tmpdir(), 'mono-bot-'));
+    const server = await startServer({ port: 0, dataDir: botDir, tickMs: 100, botDelayMs: 5 });
+    try {
+      const h = await client(server.port, undefined, 'Human');
+      const res = await h.emit('room:create', { name: 'Human' });
+      h.code = res.code!;
+      expect(await h.act({ type: 'addBot' })).toEqual({ ok: true });
+      const lobby = await h.waitFor((x) => x.players.length === 2);
+      const bot = lobby.players.find((p) => p.bot)!;
+      expect(bot.ready).toBe(true);
+      expect(await h.act({ type: 'start' })).toEqual({ ok: true });
+      await h.waitFor((x) => x.status === 'playing');
+      // Play our own turns plainly; the bot must take its turns on its own.
+      const botRolled = (x: GameView) => x.log.some((l) => l.key === 'log.rolled' && l.params.p === bot.id);
+      for (let i = 0; i < 40 && !(h.view && botRolled(h.view)); i++) {
+        const v = h.view!;
+        if (v.players[v.current].id === h.playerId) {
+          if (v.phase === 'preRoll') await h.act({ type: 'roll' });
+          else if (v.phase === 'postRoll') await h.act({ type: 'endTurn' });
+          else if (v.phase === 'awaitBuy') await h.act({ type: 'decline' });
+          else if (v.phase === 'auction') await h.act({ type: 'passAuction' });
+        } else if (v.phase === 'auction') await h.act({ type: 'passAuction' });
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      expect(botRolled(h.view!)).toBe(true);
+      h.sock.disconnect();
+    } finally {
+      await server.close();
+      rmSync(botDir, { recursive: true, force: true });
+    }
+  });
+});

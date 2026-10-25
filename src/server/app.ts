@@ -4,10 +4,11 @@ import { existsSync } from 'node:fs';
 import { createServer, type Server as HttpServer } from 'node:http';
 import { join } from 'node:path';
 import { Server, type Socket } from 'socket.io';
-import { addPlayer, applyAction, createGame, sanitizeName, setConnected, tick, type Ctx } from '../shared/engine.js';
+import { addPlayer, applyAction, createGame, humans, sanitizeName, setConnected, tick, type Ctx } from '../shared/engine.js';
 import { RULES } from '../shared/board.js';
 import { GameError, type Action, type GameEvent, type GameState } from '../shared/types.js';
 import { viewFor, type ClientToServer, type ServerToClient } from '../shared/view.js';
+import { botFallback, botMove, type BotMove } from './bot.js';
 import { Store, type Session } from './db.js';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -22,6 +23,8 @@ export interface ServerOptions {
   rng?: () => number;
   tickMs?: number;
   now?: () => number;
+  /** Pause before each bot move, so humans can follow. */
+  botDelayMs?: number;
 }
 
 type IO = Server<ClientToServer, ServerToClient>;
@@ -106,13 +109,51 @@ export async function startServer(opts: ServerOptions) {
 
   function commit(s: GameState, events: GameEvent[]) {
     rooms.set(s.code, s);
-    if (s.status === 'lobby' && s.players.length === 0) {
+    if (s.status === 'lobby' && humans(s).length === 0) {
       rooms.delete(s.code);
       store.deleteRoom(s.code);
       return;
     }
     persist(s);
     broadcast(s, events);
+    scheduleBots(s);
+  }
+
+  // ── bots: one move per room at a time, re-armed after every commit ──
+  const botTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  let closing = false;
+
+  function scheduleBots(s: GameState) {
+    if (closing || s.status !== 'playing' || botTimers.has(s.code)) return;
+    if (!s.players.some((p) => p.bot && !p.bankrupt)) return;
+    const code = s.code;
+    botTimers.set(code, setTimeout(() => {
+      botTimers.delete(code);
+      runBot(code);
+    }, opts.botDelayMs ?? 1100));
+  }
+
+  function tryBotMove(s: GameState, move: BotMove): boolean {
+    const next = structuredClone(s);
+    try {
+      const events = applyAction(next, move.playerId, move.action, ctx());
+      commit(next, events);
+      return true;
+    } catch (e) {
+      if (!(e instanceof GameError)) log('[bot] unexpected error', s.code, e);
+      return false;
+    }
+  }
+
+  function runBot(code: string) {
+    const s = rooms.get(code);
+    if (!s) return;
+    const move = botMove(s, now(), rng);
+    if (!move || tryBotMove(s, move)) return;
+    const fallback = botFallback(s, move);
+    if (fallback && tryBotMove(s, fallback)) return;
+    // Nothing worked: the turn timer's autopilot will move things along.
+    log('[bot] stuck', code, move.action.type);
   }
 
   function roomsOf(playerId: string): string[] {
@@ -289,6 +330,8 @@ export async function startServer(opts: ServerOptions) {
     }
   }, opts.tickMs ?? 1000);
 
+  for (const s of rooms.values()) scheduleBots(s);
+
   await new Promise<void>((resolve) => http.listen(opts.port, resolve));
   const address = http.address();
   const port = typeof address === 'object' && address ? address.port : opts.port;
@@ -299,6 +342,8 @@ export async function startServer(opts: ServerOptions) {
     rooms,
     async close() {
       clearInterval(tickTimer);
+      closing = true;
+      for (const t of botTimers.values()) clearTimeout(t);
       for (const s of rooms.values()) persist(s);
       await new Promise<void>((resolve) => io.close(() => resolve()));
       store.close();
