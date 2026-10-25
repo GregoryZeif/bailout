@@ -1,7 +1,7 @@
 /** English UI strings. Every key must also exist in ru.ts (checked by tests). */
 export const en: Record<string, string> = {
   // ── brand ──
-  'app.title': 'Monopoly 2026',
+  'app.title': 'Bailout',
   'app.subtitle': 'Pay Bibi Edition',
   'app.tagline': 'The property-trading party game where the only thing more inflated than rent is your debt.',
 

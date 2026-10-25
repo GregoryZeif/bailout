@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { createHash, randomBytes } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GameState } from '../shared/types.js';
 
@@ -17,7 +17,12 @@ export class Store {
     let file = ':memory:';
     if (dataDir !== ':memory:') {
       mkdirSync(dataDir, { recursive: true });
-      file = join(dataDir, 'monopoly.db');
+      file = join(dataDir, 'bailout.db');
+      // The game used to be called Monopoly 2026: carry its database over once.
+      const legacy = join(dataDir, 'monopoly.db');
+      if (!existsSync(file) && existsSync(legacy)) {
+        for (const ext of ['', '-wal', '-shm']) if (existsSync(legacy + ext)) renameSync(legacy + ext, file + ext);
+      }
     }
     this.db = new Database(file);
     this.db.pragma('journal_mode = WAL');

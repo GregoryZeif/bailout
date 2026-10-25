@@ -1,11 +1,11 @@
-# Monopoly 2026: Pay Bibi Edition
+# Bailout: Pay Bibi Edition
 
 A satirical, real-time multiplayer property-trading party game for 2–6 players. Games take about 25–45 minutes and run in desktop and mobile browsers, in **English and Russian**.
 
 Unaffordable housing, student debt, inflation, predatory credit, bureaucratic absurdity and political favoritism are all part of the rules. They aren't just jokes on the cards.
 
 > Satire. All names, people and events are fictional or parodied. No real money is involved.
-> "Monopoly" is a trademark of Hasbro. Before any public or commercial deployment, rename the game. The title lives in one place, `app.title` in `src/shared/i18n/*.ts`.
+> The title lives in one place, `app.title` in `src/shared/i18n/*.ts`.
 
 ---
 
@@ -30,7 +30,7 @@ npm start            # one Node process serves the API, WebSocket and static cli
 | Env var | Default | Purpose |
 |---|---|---|
 | `PORT` | `3001` | HTTP/WebSocket port |
-| `DATA_DIR` | `./data` | SQLite database location (`monopoly.db`) |
+| `DATA_DIR` | `./data` | SQLite database location (`bailout.db`) |
 
 Health check: `GET /api/health`.
 

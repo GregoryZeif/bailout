@@ -48,8 +48,15 @@ const ls = {
   },
 };
 
+// Keys from when the game was called Monopoly 2026 ("mono.*"): keep the player's identity and preferences.
+for (const k of ['lang', 'name', 'muted', 'token', 'room']) {
+  const old = ls.get(`mono.${k}`);
+  if (old !== null && ls.get(`bailout.${k}`) === null) ls.set(`bailout.${k}`, old);
+  if (old !== null) ls.set(`mono.${k}`, null);
+}
+
 function detectLang(): Lang {
-  const saved = ls.get('mono.lang');
+  const saved = ls.get('bailout.lang');
   if (saved === 'en' || saved === 'ru') return saved;
   return typeof navigator !== 'undefined' && navigator.language?.toLowerCase().startsWith('ru') ? 'ru' : 'en';
 }
@@ -62,13 +69,13 @@ class Store {
     connected: false,
     everConnected: false,
     playerId: null,
-    name: ls.get('mono.name') ?? '',
+    name: ls.get('bailout.name') ?? '',
     rooms: [],
     code: null,
     view: null,
     clockOffset: 0,
     lang: detectLang(),
-    muted: ls.get('mono.muted') === '1',
+    muted: ls.get('bailout.muted') === '1',
     toasts: [],
   };
   private listeners = new Set<Listener>();
@@ -101,7 +108,7 @@ class Store {
   connect() {
     if (this.socket) return;
     const socket: Socket<ServerToClient, ClientToServer> = io({
-      auth: (cb) => cb({ token: ls.get('mono.token') ?? undefined, name: this.state.name || undefined }),
+      auth: (cb) => cb({ token: ls.get('bailout.token') ?? undefined, name: this.state.name || undefined }),
       transports: ['websocket', 'polling'],
       reconnectionDelayMax: 4000,
     });
@@ -109,10 +116,10 @@ class Store {
     socket.on('connect', () => this.set({ connected: true, everConnected: true }));
     socket.on('disconnect', () => this.set({ connected: false }));
     socket.on('session', (s) => {
-      ls.set('mono.token', s.token);
+      ls.set('bailout.token', s.token);
       this.set({ playerId: s.playerId, rooms: s.rooms, name: this.state.name || s.name });
       // Recover after refresh / reconnect.
-      const want = this.state.code ?? ls.get('mono.room') ?? (location.hash.length > 1 ? location.hash.slice(1) : null);
+      const want = this.state.code ?? ls.get('bailout.room') ?? (location.hash.length > 1 ? location.hash.slice(1) : null);
       if (want) void this.join(want, true);
     });
     socket.on('state', ({ view, events }) => {
@@ -158,19 +165,19 @@ class Store {
   }
 
   setLang(lang: Lang) {
-    ls.set('mono.lang', lang);
+    ls.set('bailout.lang', lang);
     document.documentElement.lang = lang;
     this.set({ lang });
   }
 
   setMuted(m: boolean) {
-    ls.set('mono.muted', m ? '1' : '0');
+    ls.set('bailout.muted', m ? '1' : '0');
     setMuted(m);
     this.set({ muted: m });
   }
 
   async setName(name: string) {
-    ls.set('mono.name', name);
+    ls.set('bailout.name', name);
     this.set({ name });
     if (this.socket?.connected) await this.emit('profile', { name });
   }
@@ -208,7 +215,7 @@ class Store {
     const res = await this.emit('room:join', { code, name: this.state.name });
     if (!res.ok) {
       if (silent) {
-        ls.set('mono.room', null);
+        ls.set('bailout.room', null);
         if (location.hash) history.replaceState(null, '', location.pathname);
         this.set({ code: null, view: null });
       } else this.toast(res.error ?? 'err.server', res.params);
@@ -218,7 +225,7 @@ class Store {
   }
 
   private enterRoom(code: string) {
-    ls.set('mono.room', code);
+    ls.set('bailout.room', code);
     history.replaceState(null, '', `#${code}`);
     this.set({ code });
   }
@@ -226,14 +233,14 @@ class Store {
   async leave() {
     const code = this.state.code;
     if (code) await this.emit('room:leave', { code });
-    ls.set('mono.room', null);
+    ls.set('bailout.room', null);
     history.replaceState(null, '', location.pathname);
     this.set({ code: null, view: null });
   }
 
   /** Back to menu without forfeiting (finished games / spectators). */
   exitToMenu() {
-    ls.set('mono.room', null);
+    ls.set('bailout.room', null);
     history.replaceState(null, '', location.pathname);
     this.set({ code: null, view: null });
   }
