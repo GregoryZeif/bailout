@@ -201,6 +201,7 @@ export const ru: Record<string, string> = {
   'auction.high': 'Лучшая ставка: ${amount} от {name}',
   'auction.noBids': 'Ставок пока нет. Минимум ${amount}.',
   'auction.passed': 'Вы спасовали.',
+  'auction.bidBtn': 'Ставка',
   'auction.custom': 'Своя ставка',
   'auction.listPrice': 'Цена по прайсу ${amount}',
 
@@ -331,6 +332,7 @@ export const ru: Record<string, string> = {
   'log.cardChoice': '{p} сделал(а) выбор.',
   'log.inflation': 'ИНФЛЯЦИЯ: {event}',
   'log.economy': '{field}: теперь ×{value}.',
+  'log.economyRate': '{field}: теперь {value}% за ход.',
   'log.exempt': '{p} освобождён(а) (оборонный подрядчик).',
   'log.transferTie': 'Все одинаково бедны. Ничего не происходит.',
   'log.jailed': '{p} отправлен(а) в Миграционный суд.',

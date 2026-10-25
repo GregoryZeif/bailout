@@ -212,6 +212,7 @@ export const en: Record<string, string> = {
   'auction.high': 'High bid: ${amount} by {name}',
   'auction.noBids': 'No bids yet. Minimum ${amount}.',
   'auction.passed': 'You passed.',
+  'auction.bidBtn': 'Bid',
   'auction.custom': 'Custom bid',
   'auction.listPrice': 'List price ${amount}',
 
@@ -351,6 +352,7 @@ export const en: Record<string, string> = {
   'log.cardChoice': '{p} made a choice.',
   'log.inflation': 'INFLATION: {event}',
   'log.economy': '{field} is now ×{value}.',
+  'log.economyRate': '{field} is now {value}% per turn.',
   'log.exempt': '{p} is exempt (defense contractor).',
   'log.transferTie': 'Everyone is equally broke. Nothing happens.',
   'log.jailed': '{p} was sent to Immigration Court.',
