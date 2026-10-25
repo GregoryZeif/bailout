@@ -22,6 +22,7 @@ export function Menu() {
   const rooms = useStore((s) => s.rooms);
   const connected = useStore((s) => s.connected);
   const tester = useStore((s) => s.tester);
+  const playerId = useStore((s) => s.playerId);
   const [library, setLibrary] = useState(false);
   const [draft, setDraft] = useState(name);
   const [code, setCode] = useState('');
@@ -169,7 +170,15 @@ export function Menu() {
         ))}
       </section>
 
-      <footer className="footer-note">{t('menu.footer')}</footer>
+      <footer className="footer-note">
+        {t('menu.footer')}
+        {playerId && (
+          <span className="player-id">
+            {t('menu.playerId')} <code>{playerId}</code>
+            <button className="link" onClick={() => void navigator.clipboard?.writeText(playerId).catch(() => undefined)}>{t('common.copy.short')}</button>
+          </span>
+        )}
+      </footer>
       {help && <HelpModal onClose={() => setHelp(false)} />}
       {library && <LibraryModal onClose={() => setLibrary(false)} />}
     </div>

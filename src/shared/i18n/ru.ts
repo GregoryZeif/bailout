@@ -65,6 +65,8 @@ export const ru: Record<string, string> = {
   'menu.howToPlay': 'Как играть',
   'menu.resume': 'Вернуться в игру {code}',
   'menu.footer': 'Сатира. Все имена, люди и события вымышлены или пародийны. Без реальных денег. Всё ещё доступнее жилья.',
+  'menu.playerId': 'Ваш ID игрока:',
+  'common.copy.short': 'копировать',
   'menu.players': '2–6 игроков · 25–45 мин · компьютер и телефон',
 
   'common.close': 'Закрыть',

@@ -67,6 +67,8 @@ export const en: Record<string, string> = {
   'menu.howToPlay': 'How to play',
   'menu.resume': 'Resume game {code}',
   'menu.footer': 'Satire. All names, people and events are fictional or parodied. No real money. Still more affordable than housing.',
+  'menu.playerId': 'Your player ID:',
+  'common.copy.short': 'copy',
   'menu.players': '2–6 players · 25–45 min · desktop & mobile',
 
   // ── common ──
