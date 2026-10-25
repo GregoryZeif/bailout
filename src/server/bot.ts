@@ -78,7 +78,12 @@ function auctionMove(s: GameState, bots: Player[]): BotMove | null {
     if (a.passed.includes(b.id) || a.highBidderId === b.id) continue;
     const min = a.highBid > 0 ? a.highBid + RULES.auctionMinIncrement : RULES.auctionMinIncrement;
     const cap = Math.min(b.cash - reserve(s), spaceValue(s, b.id, a.space) * 0.9);
-    if (min <= cap && !s.debts.some((d) => d.debtorId === b.id)) return { playerId: b.id, action: { type: 'bid', amount: min } };
+    if (min <= cap && !s.debts.some((d) => d.debtorId === b.id)) {
+      // Raise in ~30% jumps rather than minimum steps, so auctions stay short and readable.
+      const step = RULES.auctionMinIncrement;
+      const amount = Math.max(min, Math.min(Math.floor(cap / step) * step, Math.round((a.highBid * 1.3) / step) * step));
+      return { playerId: b.id, action: { type: 'bid', amount } };
+    }
     return { playerId: b.id, action: { type: 'passAuction' } };
   }
   return null;

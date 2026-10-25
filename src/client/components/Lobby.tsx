@@ -52,11 +52,22 @@ export function Lobby({ view }: { view: GameView }) {
               <li key={p.id} className={p.connected ? '' : 'offline'}>
                 <span className="tok" style={{ background: p.color }}><TokenIcon token={p.token} size={22} color="#f4ecd8" /></span>
                 <span className="nm">{p.name}{p.id === view.you && <em> ({t('common.you')})</em>}</span>
+                {p.bot && <span className="badge">{t('lobby.bot')}</span>}
                 {p.id === view.hostId ? <span className="badge host">{t('lobby.host')}</span>
                   : <span className={`badge ${p.ready ? 'ok' : ''}`}>{p.ready ? t('lobby.ready') : t('lobby.notReady')}</span>}
+                {p.bot && isHost && (
+                  <button className="ghost small icon-btn" onClick={() => store.act({ type: 'removeBot', playerId: p.id })}
+                    title={t('lobby.removeBot')} aria-label={t('lobby.removeBot')}>×</button>
+                )}
               </li>
             ))}
           </ul>
+          {isHost && (
+            <button className="secondary small add-bot" disabled={view.players.length >= view.config.maxPlayers}
+              onClick={() => store.act({ type: 'addBot' })} data-testid="add-bot">
+              {t('lobby.addBot')}
+            </button>
+          )}
           <h3>{t('lobby.token')}</h3>
           <div className="token-picker">
             {TOKENS.map((tk) => {
