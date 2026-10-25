@@ -12,7 +12,9 @@
     "start": "node dist-server/server/index.js",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "lint": "eslint src tests"
+    "lint": "eslint src tests",
+    "e2e": "node e2e/playthrough.cjs",
+    "check": "npm run typecheck && npm run lint && npm test"
   },
   "engines": {
     "node": ">=20"

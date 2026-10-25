@@ -3,3 +3,4 @@ dist
 dist-server
 data
 *.db
+e2e/screenshots
