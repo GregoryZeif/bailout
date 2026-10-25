@@ -8,7 +8,7 @@ import { startServer } from '../src/server/app';
 import type { GameView } from '../src/shared/view';
 import type { Action } from '../src/shared/types';
 
-const dir = mkdtempSync(join(tmpdir(), 'mono-'));
+const dir = mkdtempSync(join(tmpdir(), 'bailout-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 interface Client {
@@ -142,7 +142,7 @@ describe('multiplayer server', () => {
 
 describe('bots on the server', () => {
   it('a human plays against a server-driven bot', async () => {
-    const botDir = mkdtempSync(join(tmpdir(), 'mono-bot-'));
+    const botDir = mkdtempSync(join(tmpdir(), 'bailout-bot-'));
     const server = await startServer({ port: 0, dataDir: botDir, tickMs: 100, botDelayMs: 5 });
     try {
       const h = await client(server.port, undefined, 'Human');
@@ -177,7 +177,7 @@ describe('bots on the server', () => {
 
 describe('public rooms', () => {
   it('lists only open public lobbies and lets anyone join from the list', async () => {
-    const pubDir = mkdtempSync(join(tmpdir(), 'mono-pub-'));
+    const pubDir = mkdtempSync(join(tmpdir(), 'bailout-pub-'));
     const server = await startServer({ port: 0, dataDir: pubDir, tickMs: 100, botDelayMs: 5 });
     type List = { ok: boolean; rooms: { code: string; hostName: string; players: number; bots: number; maxPlayers: number }[] };
     try {
