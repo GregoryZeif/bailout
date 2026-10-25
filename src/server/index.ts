@@ -9,18 +9,23 @@ const root = join(here, '..', '..');
 process.on('unhandledRejection', (e) => console.error('[process] unhandled rejection', e));
 process.on('uncaughtException', (e) => console.error('[process] uncaught exception', e));
 
-const server = await startServer({
+// No top-level await: hosts like Hostinger (LiteSpeed) load this file with require(),
+// which Node refuses for modules that use top-level await.
+startServer({
   port: Number(process.env.PORT ?? 3001),
   dataDir: process.env.DATA_DIR ?? join(root, 'data'),
   staticDir: join(root, 'dist', 'client'),
   // Tester tools are on while developing (running the TypeScript source), off in a build unless BAILOUT_TESTER=1.
   tester: process.env.BAILOUT_TESTER === '1' || (process.env.BAILOUT_TESTER !== '0' && import.meta.url.endsWith('.ts')),
+}).then((server) => {
+  const shutdown = async (sig: string) => {
+    console.log(`[process] ${sig} received, saving rooms…`);
+    await server.close();
+    process.exit(0);
+  };
+  process.on('SIGINT', () => void shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+}, (e: unknown) => {
+  console.error('[process] failed to start', e);
+  process.exit(1);
 });
-
-const shutdown = async (sig: string) => {
-  console.log(`[process] ${sig} received, saving rooms…`);
-  await server.close();
-  process.exit(0);
-};
-process.on('SIGINT', () => void shutdown('SIGINT'));
-process.on('SIGTERM', () => void shutdown('SIGTERM'));
