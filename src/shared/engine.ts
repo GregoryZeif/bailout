@@ -89,6 +89,7 @@ export function createGame(opts: { id: string; code: string; hostId: PlayerId; h
 }
 
 export function sanitizeName(name: string): string {
+  // eslint-disable-next-line no-control-regex -- strip control characters on purpose
   const clean = String(name ?? '').replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 20);
   return clean || 'Player';
 }
@@ -944,6 +945,7 @@ export function applyAction(s: GameState, playerId: PlayerId, action: Action, ct
   const p = getPlayer(s, playerId) ?? fail('err.notInRoom');
 
   if (action.type === 'chat') {
+    // eslint-disable-next-line no-control-regex -- strip control characters on purpose
     const text = String(action.text ?? '').replace(/[\u0000-\u0008\u000b-\u001f]/g, '').trim().slice(0, RULES.chatMaxLength);
     if (!text) fail('err.emptyMessage');
     s.chat.push({ id: `${ctx.now.toString(36)}-${s.seq + 1}`, at: ctx.now, playerId, text });
