@@ -5,6 +5,7 @@ import type { GameState } from '../../shared/types';
 import type { GameView } from '../../shared/view';
 import { store } from '../store';
 import { useT } from '../i18n';
+import { BibiSketch } from './BibiSketch';
 import { SpaceIcon, TokenIcon } from './icons';
 
 /** Grid coordinates (1-based row, col) on an 11×11 grid, Start at bottom-right. */
@@ -111,7 +112,7 @@ export function Board({ view, onSelect, children }: { view: GameView; onSelect: 
           </button>
         );
       })}
-      <div className="board-center">{children}</div>
+      <div className="board-center"><BibiSketch className="board-bibi" decorative />{children}</div>
     </div>
   );
 }
