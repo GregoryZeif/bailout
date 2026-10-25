@@ -193,6 +193,10 @@ export interface GameState {
   status: 'lobby' | 'playing' | 'finished';
   /** Public lobbies are listed on everyone's main menu. Missing on rooms saved before this existed: private. */
   visibility?: Visibility;
+  /** Tester room: the host may use the test* actions (preset dice, teleport, stacked cards, cash). */
+  testMode?: boolean;
+  /** Preset dice for the next rolls in a tester room. */
+  testDice?: [number, number][];
   config: GameConfig;
   players: Player[];
   /** Index into players of the active player. */
@@ -299,6 +303,11 @@ export type Action =
   | { type: 'alliancePropose'; toId: PlayerId }
   | { type: 'allianceRespond'; fromId: PlayerId; accept: boolean }
   | { type: 'allianceBreak'; withId: PlayerId }
+  // tester rooms only
+  | { type: 'testDice'; d1: number; d2: number }
+  | { type: 'testMoveTo'; space: number }
+  | { type: 'testStackCard'; cardId: string }
+  | { type: 'testCash'; amount: number }
   | { type: 'chat'; text: string }
   | { type: 'leave' };
 

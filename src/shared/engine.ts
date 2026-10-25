@@ -40,13 +40,15 @@ const fail = (code: string, params: Record<string, string | number> = {}): never
 
 // ───────────────────────── creation & lobby ─────────────────────────
 
-export function createGame(opts: { id: string; code: string; hostId: PlayerId; hostName: string; now: number; visibility?: Visibility }): GameState {
+export function createGame(opts: { id: string; code: string; hostId: PlayerId; hostName: string; now: number; visibility?: Visibility; testMode?: boolean }): GameState {
   const s: GameState = {
     id: opts.id,
     code: opts.code,
     hostId: opts.hostId,
     status: 'lobby',
-    visibility: opts.visibility === 'public' ? 'public' : 'private',
+    // Tester rooms are never listed publicly.
+    visibility: opts.visibility === 'public' && !opts.testMode ? 'public' : 'private',
+    ...(opts.testMode ? { testMode: true, testDice: [] } : {}),
     config: { ...DEFAULT_CONFIG },
     players: [],
     current: 0,
@@ -237,6 +239,12 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 
 function rollDie(e: E): number {
   return 1 + Math.floor(e.ctx.rng() * 6);
+}
+
+/** Two dice: preset ones first in tester rooms, random otherwise. */
+function rollDice(e: E): [number, number] {
+  const preset = e.s.testMode ? e.s.testDice?.shift() : undefined;
+  return preset ?? [rollDie(e), rollDie(e)];
 }
 
 function startGame(e: E) {
@@ -974,7 +982,8 @@ export function applyAction(s: GameState, playerId: PlayerId, action: Action, ct
   if (s.status !== 'playing') fail('err.gameOver');
   if (p.bankrupt) fail('err.bankrupt');
 
-  gameAction(e, p, action);
+  if (action.type.startsWith('test')) testAction(e, p, action);
+  else gameAction(e, p, action);
   normalize(e);
   s.updatedAt = ctx.now;
   return e.ev;
@@ -1010,6 +1019,7 @@ function lobbyAction(e: E, p: Player, action: Action) {
     case 'setVisibility': {
       if (p.id !== s.hostId) fail('err.hostOnly');
       if (action.visibility !== 'public' && action.visibility !== 'private') fail('err.badAction');
+      if (s.testMode && action.visibility === 'public') fail('err.testerPrivate');
       s.visibility = action.visibility;
       return;
     }
@@ -1068,7 +1078,7 @@ function gameAction(e: E, p: Player, action: Action) {
     case 'roll': {
       assertTurn(e, p, ['preRoll']);
       if (p.inJail) fail('err.inJail');
-      const d: [number, number] = [rollDie(e), rollDie(e)];
+      const d = rollDice(e);
       s.lastDice = d;
       s.rolled = true;
       e.ev.push({ type: 'dice', playerId: p.id, dice: d });
@@ -1184,7 +1194,7 @@ function gameAction(e: E, p: Player, action: Action) {
     case 'jailRoll13': {
       assertTurn(e, p, ['preRoll']);
       if (!p.inJail) fail('err.notInJail');
-      const d: [number, number] = [rollDie(e), rollDie(e)];
+      const d = rollDice(e);
       s.lastDice = d;
       s.rolled = true;
       e.ev.push({ type: 'dice', playerId: p.id, dice: d });
@@ -1373,6 +1383,52 @@ function gameAction(e: E, p: Player, action: Action) {
       if (!a) fail('err.notAllied');
       s.alliances = s.alliances.filter((x) => x !== a);
       log(e, 'log.allianceBroken', { p: p.id, p2: action.withId });
+      return;
+    }
+    default:
+      fail('err.badAction');
+  }
+}
+
+/** Tester tools: only in tester rooms, only for the host. */
+function testAction(e: E, p: Player, action: Action) {
+  const { s } = e;
+  if (!s.testMode) fail('err.testerOnly');
+  if (p.id !== s.hostId) fail('err.hostOnly');
+  const isInt = (n: unknown): n is number => Number.isInteger(n);
+  switch (action.type) {
+    case 'testDice': {
+      const { d1, d2 } = action;
+      if (!isInt(d1) || !isInt(d2) || d1 < 1 || d1 > 6 || d2 < 1 || d2 > 6) fail('err.badAmount');
+      s.testDice = [...(s.testDice ?? []), [d1, d2]].slice(-10) as [number, number][];
+      log(e, 'log.testDice', { p: p.id, d1, d2 });
+      return;
+    }
+    case 'testMoveTo': {
+      const cur = currentPlayer(s);
+      if (!isInt(action.space) || action.space < 0 || action.space >= BOARD_SIZE) fail('err.badOption');
+      if (s.phase !== 'preRoll') fail('err.wrongPhase', { phase: s.phase });
+      if (cur.inJail) release(cur);
+      // Acts as this turn's roll: walk forward to the space and resolve the landing.
+      s.rolled = true;
+      s.extraRoll = false;
+      log(e, 'log.testMove', { p: cur.id, s: action.space });
+      moveSteps(e, cur, (action.space - cur.position + BOARD_SIZE) % BOARD_SIZE || BOARD_SIZE);
+      resolveLanding(e, cur);
+      return;
+    }
+    case 'testStackCard': {
+      const card = CARD_BY_ID[action.cardId];
+      if (!card) fail('err.noCard');
+      const deck = card!.deck;
+      s.decks[deck] = [card!.id, ...s.decks[deck].filter((id) => id !== card!.id)];
+      log(e, 'log.testStack', { p: p.id, card: card!.id });
+      return;
+    }
+    case 'testCash': {
+      if (!isInt(action.amount) || Math.abs(action.amount) > 1_000_000) fail('err.badAmount');
+      p.cash = Math.max(0, p.cash + action.amount);
+      log(e, 'log.testCash', { p: p.id, amount: action.amount });
       return;
     }
     default:

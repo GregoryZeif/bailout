@@ -155,6 +155,28 @@ input, select {
 .feature p { font-size: 0.9rem; color: rgba(244, 236, 216, 0.82); margin: 0; }
 .feature-icon { width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; transform: rotate(-4deg); }
 
+.tester-box { margin: 0.9rem 0 0.4rem; padding: 0.7rem 0.8rem; border: 2px dashed var(--gold); border-radius: 12px; text-align: left; background: rgba(216, 177, 58, 0.08); }
+.tester-box h2 { font-size: 1rem; margin: 0 0 0.2rem; }
+.tester-btn { background: var(--gold); color: var(--ink); box-shadow: 0 3px 0 #a8862a; }
+.tester-tool { padding: 0.5rem 0; border-bottom: 1px dashed var(--line); }
+.tester-tool h4 { margin: 0 0 0.35rem; }
+.tester-tool select { max-width: 100%; }
+.card-select { flex: 1 1 14rem; min-width: 0; }
+.tester-modal .btn-row + .hint { margin-top: 0.2rem; }
+.tester-modal > .modal-body > .primary { width: 100%; margin-top: 0.8rem; }
+.library-bar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; position: sticky; top: -6px; background: var(--paper); padding: 4px 0 8px; z-index: 1; }
+.library-bar .tabs { flex: 1 1 20rem; border-radius: 8px; overflow: hidden; }
+.library-bar input { flex: 1 1 10rem; min-width: 0; }
+.library-list h3 { font-family: var(--display); margin: 0.8rem 0 0.4rem; }
+.lib-card { border: 1px solid var(--line); border-left: 5px solid var(--navy-3); border-radius: 8px; padding: 0.5rem 0.7rem; margin-bottom: 0.45rem; background: var(--cream); }
+.lib-card.deck-chance { border-left-color: var(--red); }
+.lib-card.deck-community { border-left-color: var(--green); }
+.lib-card.deck-inflation { border-left-color: var(--gold); }
+.lib-card header { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; margin-bottom: 0.2rem; }
+.lib-card code { font-size: 0.75rem; color: var(--muted); }
+.lib-card p { margin: 0; }
+.lib-choices, .lib-options { margin: 0.3rem 0 0; padding-left: 1.3rem; }
+.lib-options li.right { color: var(--green-2); font-weight: 700; }
 .footer-note { font-size: 0.74rem; color: rgba(244, 236, 216, 0.55); margin: 22px auto 0; max-width: 640px; text-align: center; }
 .status-line { font-size: 0.85rem; color: var(--muted); }
 

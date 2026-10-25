@@ -6,7 +6,7 @@
 import { useSyncExternalStore } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import type { Action, GameEvent, Lang, Visibility } from '../shared/types';
-import type { ClientToServer, GameView, PublicRoom, ServerToClient } from '../shared/view';
+import type { ClientToServer, GameView, PublicRoom, ServerToClient, TesterLibrary } from '../shared/view';
 import { play, setMuted } from './sound';
 
 export interface Toast {
@@ -22,6 +22,8 @@ export interface ClientState {
   playerId: string | null;
   name: string;
   rooms: string[];
+  /** The server allows tester rooms and the tester library. */
+  tester: boolean;
   code: string | null;
   view: GameView | null;
   clockOffset: number;
@@ -71,6 +73,7 @@ class Store {
     playerId: null,
     name: ls.get('bailout.name') ?? '',
     rooms: [],
+    tester: false,
     code: null,
     view: null,
     clockOffset: 0,
@@ -117,7 +120,7 @@ class Store {
     socket.on('disconnect', () => this.set({ connected: false }));
     socket.on('session', (s) => {
       ls.set('bailout.token', s.token);
-      this.set({ playerId: s.playerId, rooms: s.rooms, name: this.state.name || s.name });
+      this.set({ playerId: s.playerId, rooms: s.rooms, tester: !!s.tester, name: this.state.name || s.name });
       // Recover after refresh / reconnect.
       const want = this.state.code ?? ls.get('bailout.room') ?? (location.hash.length > 1 ? location.hash.slice(1) : null);
       if (want) void this.join(want, true);
@@ -182,23 +185,23 @@ class Store {
     if (this.socket?.connected) await this.emit('profile', { name });
   }
 
-  private emit<K extends 'profile' | 'room:create' | 'room:join' | 'room:leave' | 'rooms:list' | 'action'>(
+  private emit<K extends 'profile' | 'room:create' | 'room:join' | 'room:leave' | 'rooms:list' | 'tester:library' | 'action'>(
     ev: K,
     payload: Parameters<ClientToServer[K]>[0],
     timeoutMs = 8000,
-  ): Promise<{ ok: boolean; error?: string; params?: Record<string, string | number>; code?: string; rooms?: PublicRoom[] }> {
+  ): Promise<{ ok: boolean; error?: string; params?: Record<string, string | number>; code?: string; rooms?: PublicRoom[]; library?: TesterLibrary }> {
     return new Promise((resolve) => {
       const s = this.socket;
       if (!s || !s.connected) return resolve({ ok: false, error: 'common.offline' });
-      s.timeout(timeoutMs).emit(ev as 'action', payload as never, ((err: Error | null, res: { ok: boolean; error?: string; code?: string; rooms?: PublicRoom[] }) => {
+      s.timeout(timeoutMs).emit(ev as 'action', payload as never, ((err: Error | null, res: { ok: boolean; error?: string; code?: string; rooms?: PublicRoom[]; library?: TesterLibrary }) => {
         if (err) resolve({ ok: false, error: 'err.timeout' });
         else resolve(res);
       }) as never);
     });
   }
 
-  async createRoom(visibility: Visibility = 'private') {
-    const res = await this.emit('room:create', { name: this.state.name, visibility });
+  async createRoom(visibility: Visibility = 'private', tester = false) {
+    const res = await this.emit('room:create', { name: this.state.name, visibility, tester });
     if (!res.ok) return this.toast(res.error ?? 'err.server', res.params);
     this.enterRoom(res.code!);
   }
@@ -208,6 +211,26 @@ class Store {
     await this.createRoom('private');
     if (!this.state.code) return;
     for (let i = 0; i < 2; i++) await this.act({ type: 'addBot' });
+  }
+
+  /** Tester quick start: a private tester room with two fast bots. */
+  async startTestGame() {
+    await this.createRoom('private', true);
+    if (!this.state.code) return;
+    for (let i = 0; i < 2; i++) await this.act({ type: 'addBot' });
+  }
+
+  private library: Promise<TesterLibrary | null> | null = null;
+  /** Every card, quiz question (with answers) and inflation event; cached after the first load. */
+  testerLibrary(): Promise<TesterLibrary | null> {
+    this.library ??= this.emit('tester:library', {}).then((res) => {
+      if (!res.ok) {
+        this.library = null;
+        return null;
+      }
+      return res.library ?? null;
+    });
+    return this.library;
   }
 
   /** Open public lobbies; empty when offline (the menu simply shows none). */
