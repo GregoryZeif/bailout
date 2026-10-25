@@ -98,6 +98,8 @@ export interface Debt {
   creditor: Creditor;
   amount: number;
   reasonKey: string;
+  /** Bank payments that feed the bailout pot. */
+  toPot?: boolean;
 }
 
 export interface AuctionState {
@@ -106,8 +108,8 @@ export interface AuctionState {
   highBidderId: PlayerId | null;
   passed: PlayerId[];
   endsAt: number;
-  /** Phase to return to after the auction is resolved. */
-  returnPhase: TurnPhase;
+  /** Where to go after the auction: 'finish' completes the landing resolution. */
+  returnPhase: TurnPhase | 'finish';
 }
 
 export interface PendingCard {
@@ -204,6 +206,12 @@ export interface GameState {
   economy: Economy;
   /** Queue of debts to settle, first one is active. */
   debts: Debt[];
+  /** Phase to resume once all debts are settled. */
+  resumePhase: TurnPhase | null;
+  /** Result of the most recent citizenship test, for display. */
+  lastQuiz: { playerId: PlayerId; questionIds: string[]; answers: (number | null)[]; correct: boolean[]; passed: boolean; seq: number } | null;
+  /** Most recent inflation event, for display. */
+  lastInflation: { eventId: string; round: number; params: Record<string, number | string>; seq: number } | null;
   auction: AuctionState | null;
   /** Properties waiting to be auctioned (returned to bank). */
   auctionQueue: number[];
